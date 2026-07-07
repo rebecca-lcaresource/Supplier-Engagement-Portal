@@ -1,9 +1,9 @@
-# Supplier Sustainability Portal
+# The Corporate Supplier Sustainability Portal 2026
 
 ## Identity
-A single public landing page that onboards The Corporate's Tier 1 suppliers into the 2026 sustainability engagement programme — anyone with the link can open it, no login, nothing stored.
-Tier: 1 — public page, fixed content, no database, no login required (D1+A1).
-Spec version governed: v1.0 — the version of docs/product-spec.md these rules were derived from.
+A public landing page that routes Tier 1 suppliers to either the EcoVadis scorecard or an in-tool questionnaire (a guided form or a download-complete-upload flow), all handled in the browser — anyone with the link can use it, no login.
+Tier: 1 — public page, no login, no database; supplier input is held in the browser for the session only and never stored (D2+A1).
+Spec version governed: v2.0 — the version of docs/product-spec.md these rules were derived from.
 Position: Standalone — no shared database, no other tools.
 
 ## Session Protocol
@@ -13,7 +13,7 @@ At the start of every session:
 3. Read PROGRESS.md in the root — it is the current state of this build. If it is missing, recreate it with the structure below, then continue.
 4. Increment the session number and update the date in PROGRESS.md.
 5. If "Notes for next session" has content: repeat it back to the builder, treat it as this session's priorities, then clear the section.
-6. If this is session 1, run First Session Setup below before any build work.
+6. First Session Setup already ran in the v1.0 build (session 1). Do not re-run it; confirm docs/, the brand skill, and the questionnaire asset are still in place, then build.
 
 Save point — after completing any module, feature, or fix:
 1. Update PROGRESS.md: current state, remaining work, build decisions, known issues.
@@ -21,59 +21,60 @@ Save point — after completing any module, feature, or fix:
 3. Tell the builder in one line: "Save point committed: [what changed]."
 Do not start the next piece of work before the save point is pushed. An ending session is a save point.
 
-First Session Setup (session 1 only):
-1. Create docs/ and move product-spec.md into it.
-2. Install the brand skill: create .claude/skills/the-corporate-brand/ and place the provided brand file there as SKILL.md (add minimal name/description frontmatter if it has none).
-3. Announce what moved, then commit and push before building anything.
-
 PROGRESS.md structure (for the recreate rule): status header (Session / Last updated / Live URL), Current state, Last session (3–5 lines, replace each session), Remaining work (shrinking checklist), Build decisions (one line each), Known issues, Notes for next session.
 
 ## Commands
 ```
-npx serve .
+npm install
+npm run dev
+npm run build
 ```
 
 ## Tech Stack
-HTML · CSS · JavaScript · Netlify
-Deployment: manual drag-and-drop. Netlify MCP is not active and GitHub is NOT connected to Netlify. Produce one self-contained static folder (the page plus its assets/ folder of downloads); the builder deploys by dragging that folder into the Netlify dashboard. No build command, no environment variables. Tell the builder exactly which folder to drag before the first deploy.
+React · Vite · Tailwind CSS · Netlify
+The frontend is being migrated from the v1.0 HTML/CSS/JS build to React + Vite + Tailwind; the Landing Page content and all brand rules carry over unchanged.
+Deployment: Netlify MCP is not active. The repo connects to the existing v1.0 Netlify site (same live URL — v2.0 replaces v1.0) with build command `npm run build` and publish directory `dist`, deploying from main. The builder sets this build configuration once in the Netlify dashboard — remind them before the first v2.0 deploy. No environment variables.
+
+## Arms
+Export — browser only, no server function — (1) downloads the unchanged questionnaire template (XLSX) from within Door 2; (2) generates a branded client-side PDF summary of the supplier's submitted answers (S1–S7, door used, date) on the Confirmation screen, per the design in docs/product-spec.md.
 
 ## Hard Rules
-- Static page only: no database, no backend, no data capture. The page must never collect, store, or transmit supplier data. Persistence is explicitly a later phase — do not add it.
-- No API keys, tokens, or secrets anywhere. There are none in this tool and none may be introduced.
-- Submission paths are non-server: Path A is an external link to EcoVadis (new tab), Path B is a static file download, the help desk is a mailto. Never add a form submission, upload, or server-side send.
+- No supplier input ever leaves the browser. Typed form answers, parsed upload contents, and review/confirmation data stay in React state for the session only. No network request may transmit, store, or email any of it; no localStorage/sessionStorage/IndexedDB or any persistence. Refreshing or closing the tab clears everything. This invariant is what keeps GDPR inapplicable and satisfies the "no data leaves the browser" acceptance criterion — never add a backend call, form POST, or storage.
+- No API keys, tokens, or secrets anywhere. Client-side parsing and PDF libraries are bundled at build time and use no keys.
+- Uploaded files are parsed client-side only. A structural mismatch fails outright with a clear re-upload prompt — never a partial or best-effort mapping, and never a server upload.
 
 ## Project Structure
 ```
 /                     ← root: CLAUDE.md, PROGRESS.md
-/index.html           ← the single scrolling page
-/assets               ← questionnaire Excel, Code of Conduct, Environmental Policy (downloads)
-/docs                 ← product-spec.md
+/src                  ← React app (components, views, parsing + PDF logic)
+/public/assets        ← questionnaire template + resource downloads
+/docs                 ← product-spec.md (+ reference/ grounding PDFs)
 /.claude/skills/the-corporate-brand/   ← brand skill
 ```
 
 ## Brand
-Brand is governed by the the-corporate-brand skill at .claude/skills/the-corporate-brand/SKILL.md (installed in First Session Setup). Invoke it for any UI or copy work.
+Brand is governed by the the-corporate-brand skill at .claude/skills/the-corporate-brand/SKILL.md (installed in the v1.0 build). Invoke it for all UI, the new screens, and the PDF export.
 Hard rules that hold even if the skill is not loaded:
 - Background: #F2F2F2 (Chalk) — never white or Tailwind gray defaults
 - Accent, buttons, CTAs: #000000 (Ink); links underlined in Ink, never blue
-- Font: Playfair Display for display headlines, DM Sans for all body text
-- Square corners (border-radius: 0); no drop shadows, no gradients. Acid Lime #C8F135 only against black, maximum twice per page.
+- Fonts: Playfair Display for headlines, DM Sans 300 for body, DM Sans 500 for labels/emphasis
+- Square corners (border-radius: 0); no drop shadows, no gradients. Acid Lime #C8F135 only against black, sparingly.
 
 ## Business Rules
-- Decision tree: Yes → emphasise Path A (EcoVadis), dim Path B. No → emphasise Path B (Questionnaire), dim Path A. Reset → both neutral. State is browser-only and clears on refresh.
-- Dim is visual only: both path action buttons stay fully functional regardless of emphasis, so a supplier can always act on either path.
-- The redirect and the download fire only when the supplier clicks a path's action button — never automatically from the Yes/No answer.
-- Figures and dates are used exactly as written in the spec — never invent, alter, or add any figure, date, or requirement.
-- Plain priority themes only (climate, pollution, water, circular economy, people, governance). No reporting-standard codes anywhere on the page.
-- The footer confidentiality line is written for an external supplier audience — never "internal use only."
+- The landing page's questionnaire button ("Complete Questionnaire") opens the Door Choice screen — it never triggers a download. The EcoVadis button is unchanged: opens EcoVadis in a new tab.
+- Door 1 (Guided Form): a 7-section wizard; the supplier moves freely back and forth between visited sections. Required-field validation blocks advancing past a section and blocks final submit, with inline errors. Field definitions are derived from the questionnaire Excel workbook at build time and confirmed with the builder.
+- Door 2 (Download & Upload): download the unchanged template; accept .xlsx or .csv; parse client-side and map to the same field structure as Door 1. Structural mismatch fails outright (re-upload prompt); on success, show the read-only Upload Review.
+- Upload Review is read-only — no inline editing. A missing required field blocks Submit until a corrected file is uploaded (default; the builder may override).
+- Confirmation screen is shared by both doors: it shows which door was used plus a summary, and offers "Download PDF" (the Export arm above).
 
 Out of scope — do not build:
-- In-portal questionnaire form, CSV upload, or EcoVadis scorecard upload — no in-page data entry or uploads
-- Server-side submission of the questionnaire, or saved progress / supplier accounts
-- Automated scoring, in-tool Scope 3 calculation, any database or persistence, or programmatic EcoVadis validation
+- Persisted storage of submissions, or any database (Tier 2/3)
+- Supplier login or verification (any A2/A3 access change)
+- Internal review dashboard, or a submission/response tracker
+- Automated EcoVadis scorecard validation
 
 ## Reference Docs
 Read before building the related part:
-- docs/product-spec.md — full page sections, decision-tree logic, timeline, resources, acceptance criteria
+- docs/product-spec.md — full screen specs, door logic, parsing rules, PDF design, acceptance criteria
 - .claude/skills/the-corporate-brand/SKILL.md — full brand system
 PROGRESS.md in the root is read at every session start per the Session Protocol.
