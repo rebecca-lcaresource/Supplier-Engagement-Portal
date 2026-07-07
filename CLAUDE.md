@@ -33,7 +33,7 @@ npm run build
 ## Tech Stack
 React · Vite · Tailwind CSS · Netlify
 The frontend is being migrated from the v1.0 HTML/CSS/JS build to React + Vite + Tailwind; the Landing Page content and all brand rules carry over unchanged.
-Deployment: Netlify MCP is not active, and GitHub is NOT connected to Netlify — same manual model as v1.0. Claude Code runs `npm run build` and hands the builder the `dist/` folder; the builder drags that folder into the existing Netlify site's dashboard (same live URL — v2.0 replaces v1.0). No environment variables, no build command configured in the Netlify dashboard.
+Deployment: Netlify MCP is not active. As of 7 July 2026 the builder connected this GitHub repo to the existing Netlify site (same live URL) for CI-based deploys — every push to `claude/first-session-setup-e9g5z8` (or whatever branch Netlify is set to track) triggers an automatic build. Build settings are codified in `netlify.toml` at the repo root (`npm run build`, publish `dist`, Node 22) so they don't depend on manually-kept-in-sync dashboard config. No environment variables.
 
 ## Arms
 Export — browser only, no server function — (1) downloads the unchanged questionnaire template (XLSX) from within Door 2; (2) generates a branded client-side PDF summary of the supplier's submitted answers (S1–S7, door used, date) on the Confirmation screen, per the design in docs/product-spec.md.

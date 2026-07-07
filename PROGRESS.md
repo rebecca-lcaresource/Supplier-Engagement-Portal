@@ -2,9 +2,9 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 2 — v2.0 build complete, awaiting deploy
+**Session:** 2 — v2.0 build complete, deploy in progress (debugging 404)
 **Last updated:** 7 July 2026 — by Claude Code, session 2
-**Live URL:** https://supplier-engagement-portal.netlify.app/ (still serving v1.0 until the builder drags the handed-off v2.0 `dist/` build onto Netlify)
+**Live URL:** https://supplier-engagement-portal.netlify.app/ (404 as of this update — see Known issues)
 
 ## Current state
 v1.0 is still the live deploy at the URL above — the v2.0 React app is code-complete, builds cleanly (`npm run build`, no errors), and has passed a full local acceptance-criteria walkthrough, but has not yet been pushed to Netlify (that needs a Netlify dashboard build-config change first, see Remaining work). All 15 acceptance criteria in docs/product-spec.md §13 verified locally:
@@ -12,17 +12,15 @@ v1.0 is still the live deploy at the URL above — the v2.0 React app is code-co
 
 Also fixed a bundle-size issue found during this pass: jsPDF and xlsx are now dynamically imported inside the functions that use them rather than statically, so their weight (and jsPDF's unused html2canvas/dompurify sub-dependencies) only loads when a supplier actually reaches Door 2 or Confirmation — cut the main JS bundle from ~911 KB to ~180 KB.
 
-A fresh `dist/` build was produced and verified standalone (served + loaded with Playwright, no console errors, all assets resolve) and handed to the builder as a zip for manual drag-and-drop, matching CLAUDE.md's current deployment model. The builder confirmed they'll connect Netlify to GitHub for CI-based builds soon — CLAUDE.md's Deployment line will need updating again when that happens (see Remaining work).
+The builder connected Netlify to GitHub for CI-based deploys, tracking the `claude/first-session-setup-e9g5z8` branch (confirmed correct branch — not a main/branch mismatch). The resulting deploy 404s. Root cause: no `netlify.toml` existed, so the site had no declared build command / publish directory — it was almost certainly still running with v1.0's static "no build, publish root" settings, which can't produce a working build for a Vite app (no `dist/` gets created, so Netlify serves nothing at the site root). Added `netlify.toml` at the repo root (`command = "npm run build"`, `publish = "dist"`, `NODE_VERSION = "22"`) so build settings are version-controlled rather than dependent on manually-kept-in-sync dashboard config. CLAUDE.md's Deployment line updated to describe the new GitHub-connected CI model. Not yet confirmed fixed — needs the builder to trigger a new deploy after this pushes and check the result.
 [Rule: this section describes what exists and works right now — never what is planned. Completed checklist items get absorbed here in compressed form.]
 
 ## Last session
-Session 1: ran First Session Setup, built and deployed the v1.0 static page. Session 2 (this one): spec revised to v2.0; built the full React app (Landing Page, Door Choice, Guided Form, Door 2, Confirmation, PDF export); ran a full local acceptance-criteria pass (all 15 v2.0 criteria verified); produced and handed off a verified `dist/` build for manual drag-and-drop deploy. Still open: real EcoVadis URL, and the builder's planned switch to GitHub-connected Netlify builds.
+Session 1: ran First Session Setup, built and deployed the v1.0 static page. Session 2 (this one): spec revised to v2.0; built the full React app; ran a full local acceptance-criteria pass (all 15 verified); handed off manual drag-and-drop builds (hit a 404, likely a folder-nesting issue on a first attempt); builder then connected Netlify to GitHub for CI deploys, which also 404'd — diagnosed as a missing `netlify.toml` (no build command/publish directory configured) and fixed by adding one. Still open: confirm the CI deploy now succeeds, and the real EcoVadis URL.
 [Rule: 3–5 lines maximum. Replace each session — what was built, changed, or fixed.]
 
-## Remaining work
-- [ ] Swap the placeholder EcoVadis URL (`https://www.ecovadis.com/`) for the confirmed redirect URL, then rebuild and redeploy
-- [ ] Builder drags the `dist/` build (handed off as a zip this session) onto the existing Netlify site's dashboard
-- [ ] Builder is connecting Netlify to GitHub for CI builds shortly — when that happens, update CLAUDE.md's Deployment line (currently "manual, GitHub NOT connected") and Netlify's build command (`npm run build`) / publish directory (`dist`) accordingly
+- [ ] Confirm the next Netlify deploy (triggered by this push, since GitHub is now connected) succeeds and the live URL shows v2.0, not a 404
+- [ ] Swap the placeholder EcoVadis URL (`https://www.ecovadis.com/`) for the confirmed redirect URL, then push (auto-redeploys via CI now)
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions
@@ -47,6 +45,7 @@ Session 1: ran First Session Setup, built and deployed the v1.0 static page. Ses
 [Rule: one line per decision made during the build that is not in the spec — prompt structures, field formats, naming choices, library picks. Future sessions depend on these to stay consistent.]
 
 ## Known issues
+- Deploy was 404ing as of this update. Two separate causes found this session: (1) an earlier manual drag-and-drop attempt likely had a folder-nesting mismatch; (2) after the builder connected GitHub to Netlify, the site had no `netlify.toml` and no build command configured, so no `dist/` was ever produced. Added `netlify.toml` (build command, publish dir, Node version) — needs confirmation on the next deploy that this actually resolves it.
 - Brand deviation, intentional: the Landing Page's two section dividers are Dark Blue, not Stone/Ink — see Build decisions. Future sessions should not "fix" this back to brand-compliant without checking with the builder first, since it was a deliberate explicit request.
 - Blocking deploy: EcoVadis redirect URL is still a placeholder (`https://www.ecovadis.com/`) — swap in the real URL before deploy.
 - (v2) Upload with missing required answers: default is to block Submit until a corrected file is uploaded — builder may override (spec v2.0 §15).
