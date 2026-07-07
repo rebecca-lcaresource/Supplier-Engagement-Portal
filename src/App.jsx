@@ -2,10 +2,13 @@ import { useState } from 'react';
 import LandingPage from './components/landing/LandingPage.jsx';
 import DoorChoice from './components/DoorChoice.jsx';
 import GuidedForm from './components/guidedForm/GuidedForm.jsx';
+import DownloadUpload from './components/DownloadUpload.jsx';
+import UploadReview from './components/UploadReview.jsx';
 
 export default function App() {
   const [view, setView] = useState('landing');
   const [submission, setSubmission] = useState(null); // { answers, door }
+  const [parsedAnswers, setParsedAnswers] = useState(null);
 
   if (view === 'landing') {
     return <LandingPage onCompleteQuestionnaire={() => setView('doorChoice')} />;
@@ -27,6 +30,34 @@ export default function App() {
         onBack={() => setView('doorChoice')}
         onSubmit={(answers) => {
           setSubmission({ answers, door: 'door1' });
+          setView('confirmation');
+        }}
+      />
+    );
+  }
+
+  if (view === 'downloadUpload') {
+    return (
+      <DownloadUpload
+        onBack={() => setView('doorChoice')}
+        onParsed={(answers) => {
+          setParsedAnswers(answers);
+          setView('uploadReview');
+        }}
+      />
+    );
+  }
+
+  if (view === 'uploadReview') {
+    return (
+      <UploadReview
+        parsedAnswers={parsedAnswers}
+        onReupload={() => {
+          setParsedAnswers(null);
+          setView('downloadUpload');
+        }}
+        onSubmit={(answers) => {
+          setSubmission({ answers, door: 'door2' });
           setView('confirmation');
         }}
       />

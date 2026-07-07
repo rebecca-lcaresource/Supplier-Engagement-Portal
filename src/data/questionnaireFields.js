@@ -24,6 +24,7 @@ export const FIELDS = [
   // --- S1 — General Information ---
   {
     id: 's1_q1',
+    sheetRow: 6,
     section: 'S1',
     esrsRef: null,
     type: 'text',
@@ -32,6 +33,7 @@ export const FIELDS = [
   },
   {
     id: 's1_q2',
+    sheetRow: 7,
     section: 'S1',
     esrsRef: null,
     type: 'text',
@@ -42,6 +44,7 @@ export const FIELDS = [
   // --- S2 — Climate & Decarbonisation ---
   {
     id: 's2_q1',
+    sheetRow: 11,
     section: 'S2',
     esrsRef: 'E1-4',
     type: 'text',
@@ -50,6 +53,7 @@ export const FIELDS = [
   },
   {
     id: 's2_q2',
+    sheetRow: 12,
     section: 'S2',
     esrsRef: 'E1-4',
     // The source sheet pairs this question with a "verification method" dropdown
@@ -61,6 +65,7 @@ export const FIELDS = [
   },
   {
     id: 's2_q3',
+    sheetRow: 13,
     section: 'S2',
     esrsRef: 'E1-4',
     type: 'text',
@@ -69,6 +74,7 @@ export const FIELDS = [
   },
   {
     id: 's2_q4',
+    sheetRow: 14,
     section: 'S2',
     esrsRef: 'E1-3',
     type: 'select',
@@ -78,6 +84,7 @@ export const FIELDS = [
   },
   {
     id: 's2_q5',
+    sheetRow: 15,
     section: 'S2',
     esrsRef: 'E1-2',
     type: 'textarea',
@@ -86,6 +93,7 @@ export const FIELDS = [
   },
   {
     id: 's2_q6',
+    sheetRow: 16,
     section: 'S2',
     esrsRef: 'E1-2',
     type: 'textarea',
@@ -96,6 +104,7 @@ export const FIELDS = [
   // --- S3 — Pollution & PFAS ---
   {
     id: 's3_q1',
+    sheetRow: 18,
     section: 'S3',
     esrsRef: 'E2-3',
     type: 'text',
@@ -104,6 +113,7 @@ export const FIELDS = [
   },
   {
     id: 's3_q2',
+    sheetRow: 19,
     section: 'S3',
     esrsRef: 'E2-3',
     type: 'select',
@@ -113,6 +123,7 @@ export const FIELDS = [
   },
   {
     id: 's3_q3',
+    sheetRow: 20,
     section: 'S3',
     esrsRef: 'E2-3',
     type: 'textarea',
@@ -121,6 +132,7 @@ export const FIELDS = [
   },
   {
     id: 's3_q4',
+    sheetRow: 21,
     section: 'S3',
     esrsRef: 'E2-2',
     type: 'textarea',
@@ -131,6 +143,7 @@ export const FIELDS = [
   // --- S4 — Water & Marine Resources ---
   {
     id: 's4_q1',
+    sheetRow: 23,
     section: 'S4',
     esrsRef: 'E3-1',
     type: 'text',
@@ -139,6 +152,7 @@ export const FIELDS = [
   },
   {
     id: 's4_q2',
+    sheetRow: 24,
     section: 'S4',
     esrsRef: 'E3-1',
     type: 'select',
@@ -148,6 +162,7 @@ export const FIELDS = [
   },
   {
     id: 's4_q3',
+    sheetRow: 25,
     section: 'S4',
     esrsRef: 'E3-2',
     type: 'textarea',
@@ -156,6 +171,7 @@ export const FIELDS = [
   },
   {
     id: 's4_q4',
+    sheetRow: 26,
     section: 'S4',
     esrsRef: 'E3-2',
     type: 'textarea',
@@ -166,6 +182,7 @@ export const FIELDS = [
   // --- S5 — Circular Economy & Waste ---
   {
     id: 's5_q1',
+    sheetRow: 28,
     section: 'S5',
     esrsRef: 'E5-2',
     type: 'text',
@@ -174,6 +191,7 @@ export const FIELDS = [
   },
   {
     id: 's5_q2',
+    sheetRow: 29,
     section: 'S5',
     esrsRef: 'E5-4',
     type: 'text',
@@ -182,6 +200,7 @@ export const FIELDS = [
   },
   {
     id: 's5_q3',
+    sheetRow: 30,
     section: 'S5',
     esrsRef: 'E5-3',
     type: 'textarea',
@@ -190,6 +209,7 @@ export const FIELDS = [
   },
   {
     id: 's5_q4',
+    sheetRow: 31,
     section: 'S5',
     esrsRef: 'E5-2',
     type: 'textarea',
@@ -200,6 +220,7 @@ export const FIELDS = [
   // --- S6 — Biodiversity & Ecosystems ---
   {
     id: 's6_q1',
+    sheetRow: 33,
     section: 'S6',
     esrsRef: 'E4-2',
     type: 'select',
@@ -209,6 +230,7 @@ export const FIELDS = [
   },
   {
     id: 's6_q2',
+    sheetRow: 34,
     section: 'S6',
     esrsRef: 'E4-3',
     type: 'textarea',
@@ -217,6 +239,7 @@ export const FIELDS = [
   },
   {
     id: 's6_q3',
+    sheetRow: 35,
     section: 'S6',
     esrsRef: 'E4-5',
     type: 'textarea',
@@ -227,6 +250,7 @@ export const FIELDS = [
   // --- S7 — Social, Labour & Governance ---
   {
     id: 's7_q1',
+    sheetRow: 37,
     section: 'S7',
     esrsRef: 'S2-1',
     type: 'select',
@@ -236,6 +260,7 @@ export const FIELDS = [
   },
   {
     id: 's7_q2',
+    sheetRow: 38,
     section: 'S7',
     esrsRef: 'S2-2',
     type: 'select',
@@ -245,6 +270,7 @@ export const FIELDS = [
   },
   {
     id: 's7_q3',
+    sheetRow: 39,
     section: 'S7',
     esrsRef: 'S2-4',
     type: 'textarea',
@@ -253,6 +279,7 @@ export const FIELDS = [
   },
   {
     id: 's7_q4',
+    sheetRow: 40,
     section: 'S7',
     esrsRef: 'G1-1',
     type: 'select',
@@ -262,6 +289,7 @@ export const FIELDS = [
   },
   {
     id: 's7_q5',
+    sheetRow: 41,
     section: 'S7',
     esrsRef: 'G1-2',
     type: 'textarea',
