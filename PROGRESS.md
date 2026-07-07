@@ -2,24 +2,27 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 2 — v2.0 build in progress
+**Session:** 2 — v2.0 build complete, awaiting deploy
 **Last updated:** 7 July 2026 — by Claude Code, session 2
-**Live URL:** https://supplier-engagement-portal.netlify.app/ (still serving v1.0 until the v2.0 React build is deployed)
+**Live URL:** https://supplier-engagement-portal.netlify.app/ (still serving v1.0 until the builder drags the handed-off v2.0 `dist/` build onto Netlify)
 
 ## Current state
 v1.0 is still the live deploy at the URL above — the v2.0 React app is code-complete, builds cleanly (`npm run build`, no errors), and has passed a full local acceptance-criteria walkthrough, but has not yet been pushed to Netlify (that needs a Netlify dashboard build-config change first, see Remaining work). All 15 acceptance criteria in docs/product-spec.md §13 verified locally:
 - **1** Landing Page renders unchanged, EcoVadis button confirmed `target="_blank"` to the (placeholder) URL — **2** "Complete Questionnaire" opens Door Choice, no download fires — **3** Door Choice shows both cards + working back-to-landing — **4** Guided Form's 7 sections match the confirmed field mapping — **5** inline validation blocks Next on empty required fields, section-tab jump works — **6** valid Submit reaches Confirmation — **7** Download Template verified **byte-identical** (`cmp`) to the source asset — **8** a garbage file is hard-rejected with a clear error, .xlsx/.csv both accepted — **9** Upload Review parsed values verified to match a synthetic filled file exactly, values aren't editable, re-upload returns to the upload step — **10** an unfilled template correctly flags all 27 answers as missing and blocks Submit — **11** Confirmation shows door used + sections completed for both doors — **12** the downloaded PDF was rendered in Chromium and visually confirmed: branded header, correct pagination (4 pages), all content present — **13** grepped `src/` for `localStorage|sessionStorage|fetch|XMLHttpRequest|axios` — no matches; network tab during a full run showed only the Google Fonts CSS request, no data transmission — **14** no persistence mechanism exists anywhere in the code, so refresh/close trivially clears everything — **15** production build succeeds, and every screen (Landing, Door Choice, Guided Form, Download & Upload) was screenshotted at a 390px mobile viewport with clean stacked layouts and no console errors.
 
 Also fixed a bundle-size issue found during this pass: jsPDF and xlsx are now dynamically imported inside the functions that use them rather than statically, so their weight (and jsPDF's unused html2canvas/dompurify sub-dependencies) only loads when a supplier actually reaches Door 2 or Confirmation — cut the main JS bundle from ~911 KB to ~180 KB.
+
+A fresh `dist/` build was produced and verified standalone (served + loaded with Playwright, no console errors, all assets resolve) and handed to the builder as a zip for manual drag-and-drop, matching CLAUDE.md's current deployment model. The builder confirmed they'll connect Netlify to GitHub for CI-based builds soon — CLAUDE.md's Deployment line will need updating again when that happens (see Remaining work).
 [Rule: this section describes what exists and works right now — never what is planned. Completed checklist items get absorbed here in compressed form.]
 
 ## Last session
-Session 1: ran First Session Setup, built and deployed the v1.0 static page. Session 2 (this one): spec revised to v2.0; built the full React app (Landing Page, Door Choice, Guided Form, Door 2, Confirmation, PDF export); ran a full local acceptance-criteria pass (all 15 v2.0 criteria verified — see Current state) including mobile screenshots and a byte-identical template-download check. v2.0 is code-complete but not yet deployed — needs the Netlify build-config switch and the real EcoVadis URL.
+Session 1: ran First Session Setup, built and deployed the v1.0 static page. Session 2 (this one): spec revised to v2.0; built the full React app (Landing Page, Door Choice, Guided Form, Door 2, Confirmation, PDF export); ran a full local acceptance-criteria pass (all 15 v2.0 criteria verified); produced and handed off a verified `dist/` build for manual drag-and-drop deploy. Still open: real EcoVadis URL, and the builder's planned switch to GitHub-connected Netlify builds.
 [Rule: 3–5 lines maximum. Replace each session — what was built, changed, or fixed.]
 
 ## Remaining work
-- [ ] Swap the placeholder EcoVadis URL (`https://www.ecovadis.com/`) for the confirmed redirect URL, then redeploy (carries over into the v2.0 Landing Page)
-- [ ] Switch the existing Netlify site to build-on-deploy (build command `npm run build`, publish `dist`) and redeploy — v2.0 replaces v1.0 at the same URL
+- [ ] Swap the placeholder EcoVadis URL (`https://www.ecovadis.com/`) for the confirmed redirect URL, then rebuild and redeploy
+- [ ] Builder drags the `dist/` build (handed off as a zip this session) onto the existing Netlify site's dashboard
+- [ ] Builder is connecting Netlify to GitHub for CI builds shortly — when that happens, update CLAUDE.md's Deployment line (currently "manual, GitHub NOT connected") and Netlify's build command (`npm run build`) / publish directory (`dist`) accordingly
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions
