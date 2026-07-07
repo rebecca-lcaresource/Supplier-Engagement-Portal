@@ -31,8 +31,8 @@ a {
 }
 
 .tc-divider {
-  height: 0.5px;
-  background: var(--tc-border);
+  height: 1px;
+  background: #00008B; /* Dark Blue — deliberate one-off exception to the brand's "never blue" rule, per builder request */
 }
 
 .tc-btn-primary {

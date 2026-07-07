@@ -43,9 +43,11 @@ Session 1: ran First Session Setup, built and deployed the v1.0 static page. Ses
 - Path B's landing-page card instruction text updated to "Complete the assessment in the tool, or download it, finish offline, and upload the result." (not specified verbatim in either spec version) to reflect that the button now opens Door Choice instead of downloading directly.
 - PDF export uses jsPDF's built-in 'times' (serif, for headings) and 'helvetica' (sans, for body) rather than embedding the actual Playfair Display/DM Sans TTFs — approximates the brand's serif/sans pairing without the complexity and repo weight of font embedding. Brand colors (Ink/Stone/Chalk), the black header band with logo mark, and square-corner layout are applied exactly.
 - `jsPDF` and `xlsx` are dynamically imported inside `generatePdf.js`/`parseUpload.js` rather than statically at module load, since jsPDF pulls in unused html2canvas/dompurify sub-dependencies — keeps both libraries out of the initial bundle, loading only when a supplier reaches Door 2 or Confirmation. Cut the main JS bundle from ~911 KB to ~180 KB.
+- Landing Page's `.tc-divider` (the two horizontal rules between Hero/Why/How it works) recolored to Dark Blue (`#00008B`) and thickened to 1px, per explicit builder request — a deliberate one-off exception to the brand's "never blue" rule, not a change to the brand skill or CLAUDE.md hard rule itself.
 [Rule: one line per decision made during the build that is not in the spec — prompt structures, field formats, naming choices, library picks. Future sessions depend on these to stay consistent.]
 
 ## Known issues
+- Brand deviation, intentional: the Landing Page's two section dividers are Dark Blue, not Stone/Ink — see Build decisions. Future sessions should not "fix" this back to brand-compliant without checking with the builder first, since it was a deliberate explicit request.
 - Blocking deploy: EcoVadis redirect URL is still a placeholder (`https://www.ecovadis.com/`) — swap in the real URL before deploy.
 - (v2) Upload with missing required answers: default is to block Submit until a corrected file is uploaded — builder may override (spec v2.0 §15).
 - (v2) Landing questionnaire button label assumed "Complete Questionnaire" — builder may change (spec v2.0 §15).
