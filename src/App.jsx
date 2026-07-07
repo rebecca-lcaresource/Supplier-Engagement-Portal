@@ -4,6 +4,7 @@ import DoorChoice from './components/DoorChoice.jsx';
 import GuidedForm from './components/guidedForm/GuidedForm.jsx';
 import DownloadUpload from './components/DownloadUpload.jsx';
 import UploadReview from './components/UploadReview.jsx';
+import Confirmation from './components/Confirmation.jsx';
 
 export default function App() {
   const [view, setView] = useState('landing');
@@ -62,6 +63,10 @@ export default function App() {
         }}
       />
     );
+  }
+
+  if (view === 'confirmation' && submission) {
+    return <Confirmation submission={submission} />;
   }
 
   return (

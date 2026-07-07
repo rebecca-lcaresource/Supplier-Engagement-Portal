@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { FIELDS } from '../data/questionnaireFields.js';
 
 // Anchor cells that must match the unchanged template exactly. Used to
@@ -21,7 +20,7 @@ const ANCHORS = [
 const MISMATCH_ERROR =
   "This doesn't match The Corporate's questionnaire template. Please re-upload the unmodified file.";
 
-function readFileAsWorkbook(file) {
+function readFileAsWorkbook(XLSX, file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     const isCsv = file.name.toLowerCase().endsWith('.csv');
@@ -56,9 +55,11 @@ export async function parseUploadedQuestionnaire(file) {
     return { success: false, error: 'Please upload a .xlsx or .csv file.' };
   }
 
+  const XLSX = await import('xlsx');
+
   let workbook;
   try {
-    workbook = await readFileAsWorkbook(file);
+    workbook = await readFileAsWorkbook(XLSX, file);
   } catch {
     return { success: false, error: MISMATCH_ERROR };
   }
