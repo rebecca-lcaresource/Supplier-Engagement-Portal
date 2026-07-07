@@ -2,20 +2,19 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 0 — build not started
-**Last updated:** 7 July 2026 — by Project Governor, pre-build
+**Session:** 1 — build in progress
+**Last updated:** 7 July 2026 — by Claude Code, session 1
 **Live URL:** none yet [Rule: fill in after the first successful deploy]
 
 ## Current state
-Nothing built. Repo contains CLAUDE.md, PROGRESS.md, product-spec.md, the-corporate-brand.skill (brand skill — installed in session 1).
+First Session Setup complete. `docs/product-spec.md` holds the governed spec; `docs/reference/` holds the two source PDFs (Procurement Sustainability Strategy 2026, Program Charter 2026) used only for content grounding. Brand skill installed at `.claude/skills/the-corporate-brand/SKILL.md`. Download assets organized in `assets/`: Supplier Code of Conduct PDF, Global Environmental Policy PDF, Supplier Questionnaire (renamed `.XLS` → `.xlsx`, its true format). Three duplicate short-filename copies (`PROCUR_1.PDF`, `SUPPLI_1.PDF`, `THE_CO_1.XLS`) were removed after confirming byte-for-byte identity with their descriptively-named counterparts. Page build not yet started.
 [Rule: this section describes what exists and works right now — never what is planned. Completed checklist items get absorbed here in compressed form.]
 
 ## Last session
-None — the first build session has not happened yet.
+Session 1: ran First Session Setup (docs/, assets/, brand skill install) and committed before starting the page build.
 [Rule: 3–5 lines maximum. Replace each session — what was built, changed, or fixed.]
 
 ## Remaining work
-- [ ] First Session Setup: create docs/, move reference files, install the the-corporate-brand brand skill, commit (see CLAUDE.md Session Protocol)
 - [ ] Build Hero — intro headline plus the four large headline figures
 - [ ] Build Why — value-chain exposure, net-zero ambition, CSRD readiness as context, shared-journey framing; partnership tone
 - [ ] Build How it works — the Smart Intake model and the EcoVadis efficiency rule
