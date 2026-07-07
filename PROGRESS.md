@@ -7,17 +7,15 @@
 **Live URL:** https://supplier-engagement-portal.netlify.app/ (still serving v1.0 until the v2.0 React build is deployed)
 
 ## Current state
-v1.0 is still the live deploy at the URL above (v2.0 hasn't been pushed to Netlify yet). Locally, the React + Vite + Tailwind scaffold is in place and builds cleanly (`npm run build`): `/src` holds the app, `/public/assets` holds the three downloadable files (moved from `/assets`), Tailwind is configured with the brand's exact color/font/spacing tokens. The Landing Page is fully ported to React (Header, Hero, Why, HowItWorks, DecisionTree, Timeline, Resources, Footer components) with identical v1.0 content and verified-working Yes/No/Reset emphasis logic. The only content change: the questionnaire path's button now reads "Complete Questionnaire" and calls into `App.jsx`'s view state instead of downloading — it currently lands on a "not built yet" placeholder for Door Choice, which is the next piece.
+v1.0 is still the live deploy at the URL above (v2.0 hasn't been pushed to Netlify yet). Locally, the React app builds cleanly and now covers: Landing Page (unchanged from v1.0, "Complete Questionnaire" button), Door Choice (two option cards + back to landing), and the full Guided Form (Door 1) — a 7-section wizard driven by `src/data/questionnaireFields.js` (the confirmed S1–S7 mapping plus the declaration fields appended to Section 7). Guided Form supports: free jump between sections via a clickable S1–S7 tab strip, linear Back/Next with inline required-field validation blocking Next, ESRS reference tags shown per question, and a Submit that validates every section (not just the current one) and jumps to the first invalid section if anything's missing. Verified locally via Playwright: empty-field validation errors render correctly, section jump works, ESRS tags render, no console errors. Submitting currently routes to a "not built yet" placeholder — Confirmation screen is still to come. Door 2 (Download & Upload) not yet built.
 [Rule: this section describes what exists and works right now — never what is planned. Completed checklist items get absorbed here in compressed form.]
 
 ## Last session
-Session 1: ran First Session Setup, built and deployed the v1.0 static page. Session 2 (this one, in progress): spec revised to v2.0; derived and confirmed the S1–S7 field structure with the builder; scaffolded React + Vite + Tailwind and ported the full Landing Page (verified working locally, screenshots + interaction test passed). Next: Door Choice screen.
+Session 1: ran First Session Setup, built and deployed the v1.0 static page. Session 2 (this one, in progress): spec revised to v2.0; derived and confirmed the S1–S7 field structure; scaffolded React + Vite + Tailwind and ported the Landing Page; built Door Choice and the full 7-section Guided Form with validation, free section navigation, and ESRS tags — all verified locally. Next: Door 2 (Download & Upload + Upload Review).
 [Rule: 3–5 lines maximum. Replace each session — what was built, changed, or fixed.]
 
 ## Remaining work
 - [ ] Swap the placeholder EcoVadis URL (`https://www.ecovadis.com/`) for the confirmed redirect URL, then redeploy (carries over into the v2.0 Landing Page)
-- [ ] (v2 revision) Build Door Choice screen — pick "Fill in the tool" or "Download and complete offline," with a way back to the landing page
-- [ ] (v2 revision) Build Guided Form (Door 1) — 7-section wizard, free back/forth navigation, required-field validation with inline errors
 - [ ] (v2 revision) Build Download & Upload (Door 2) — template download + .xlsx/.csv upload with client-side structural parsing (hard fail on mismatch)
 - [ ] (v2 revision) Build Upload Review (Door 2) — read-only parsed summary; missing required fields block Submit until a corrected file is uploaded
 - [ ] (v2 revision) Build Confirmation screen (shared) — shows which door was used, a summary, and a Download PDF button
