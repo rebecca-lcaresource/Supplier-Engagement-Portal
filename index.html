@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supplier Sustainability Portal — The Corporate</title>
+<meta name="description" content="The Corporate's 2026 Supplier Sustainability Engagement Programme — onboarding for Tier 1 suppliers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --tc-ink:    #000000;
+    --tc-stone:  #B6B09F;
+    --tc-linen:  #EAE4D5;
+    --tc-chalk:  #F2F2F2;
+    --tc-white:  #FFFFFF;
+    --tc-lime:   #C8F135;
+
+    --tc-bg-page:      var(--tc-chalk);
+    --tc-bg-surface:   var(--tc-linen);
+    --tc-bg-elevated:  var(--tc-white);
+    --tc-text-primary: var(--tc-ink);
+    --tc-text-muted:   var(--tc-stone);
+    --tc-border:       rgba(182, 176, 159, 0.35);
+    --tc-border-strong: var(--tc-stone);
+
+    --tc-font-display: 'Playfair Display', Georgia, serif;
+    --tc-font-body:    'DM Sans', system-ui, sans-serif;
+
+    --tc-space-xs:  4px;
+    --tc-space-sm:  8px;
+    --tc-space-md:  16px;
+    --tc-space-lg:  24px;
+    --tc-space-xl:  40px;
+    --tc-space-2xl: 64px;
+    --tc-space-3xl: 96px;
+    --tc-max-width: 1120px;
+    --tc-content-width: 720px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--tc-bg-page);
+    color: var(--tc-text-primary);
+    font-family: var(--tc-font-body);
+    font-weight: 300;
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  a { color: var(--tc-ink); text-decoration: underline; }
+
+  .tc-page { max-width: var(--tc-max-width); margin: 0 auto; padding: 0 var(--tc-space-2xl); }
+  .tc-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--tc-space-lg); }
+  .tc-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--tc-space-lg); }
+
+  @media (max-width: 768px) {
+    .tc-grid-2, .tc-grid-4 { grid-template-columns: 1fr; }
+    .tc-page { padding: 0 var(--tc-space-md); }
+  }
+
+  .tc-h1 { font-family: var(--tc-font-display); font-size: 48px; font-weight: 700; line-height: 1.05; letter-spacing: -0.01em; color: var(--tc-ink); margin: 0 0 var(--tc-space-md); }
+  .tc-h2 { font-family: var(--tc-font-display); font-size: 32px; font-weight: 400; line-height: 1.15; color: var(--tc-ink); margin: 0 0 var(--tc-space-lg); }
+  .tc-h3 { font-family: var(--tc-font-body); font-size: 18px; font-weight: 500; line-height: 1.3; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tc-ink); margin: 0 0 var(--tc-space-sm); }
+  .tc-subhead { font-family: var(--tc-font-body); font-size: 13px; font-weight: 500; line-height: 1.4; letter-spacing: 0.16em; text-transform: uppercase; color: var(--tc-stone); margin: 0 0 var(--tc-space-md); }
+  .tc-body { font-family: var(--tc-font-body); font-size: 15px; font-weight: 300; line-height: 1.75; color: var(--tc-ink); }
+  .tc-label { font-family: var(--tc-font-body); font-size: 11px; font-weight: 400; line-height: 1.5; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tc-stone); }
+
+  .tc-content-col { max-width: var(--tc-content-width); }
+
+  section { padding: var(--tc-space-3xl) 0; }
+  .tc-divider { height: 0.5px; background: var(--tc-border); margin: 0; }
+
+  /* Logo */
+  .tc-logo { display: flex; align-items: center; gap: var(--tc-space-sm); }
+  .tc-logo-box { width: 28px; height: 28px; background: var(--tc-ink); display: flex; align-items: center; justify-content: center; }
+  .tc-logo-box span { color: var(--tc-chalk); font-family: var(--tc-font-body); font-weight: 500; font-size: 14px; }
+  .tc-logo-word { font-family: var(--tc-font-body); font-weight: 300; letter-spacing: 0.12em; text-transform: uppercase; font-size: 14px; color: var(--tc-ink); }
+
+  header.tc-topbar { padding: var(--tc-space-lg) 0; }
+
+  /* Hero */
+  #hero { padding-top: var(--tc-space-xl); }
+  .tc-lede { font-size: 18px; font-weight: 300; max-width: var(--tc-content-width); margin: 0 0 var(--tc-space-xl); }
+  .tc-lime-underline { border-bottom: 2px solid var(--tc-lime); padding-bottom: 2px; }
+
+  .tc-stat-tile { background: var(--tc-linen); border: 0.5px solid var(--tc-border-strong); padding: var(--tc-space-lg); }
+  .tc-stat-figure { font-family: var(--tc-font-display); font-size: 40px; font-weight: 700; line-height: 1.1; margin: 0 0 var(--tc-space-xs); }
+  .tc-stat-label { font-family: var(--tc-font-body); font-size: 12px; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tc-stone); }
+
+  .tc-hero-cta { margin-top: var(--tc-space-xl); }
+
+  /* Buttons */
+  .tc-btn-primary {
+    display: inline-block;
+    font-family: var(--tc-font-body);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--tc-ink);
+    color: var(--tc-chalk) !important;
+    border: none;
+    border-radius: 0;
+    padding: 12px 28px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .tc-btn-primary:hover { background: #1a1a1a; }
+
+  .tc-btn-secondary {
+    display: inline-block;
+    font-family: var(--tc-font-body);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--tc-ink) !important;
+    border: 0.5px solid var(--tc-ink);
+    border-radius: 0;
+    padding: 12px 28px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .tc-btn-secondary:hover { background: var(--tc-chalk); }
+
+  /* Why section lists */
+  .tc-why-block { margin-bottom: var(--tc-space-lg); }
+  .tc-theme-row { display: flex; flex-wrap: wrap; gap: var(--tc-space-sm); margin-top: var(--tc-space-md); }
+  .tc-theme-chip { border: 0.5px solid var(--tc-border-strong); padding: 6px 14px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-ink); }
+
+  /* How it works */
+  .tc-badge-dark { background: var(--tc-ink); padding: 4px 12px; display: inline-block; margin-bottom: var(--tc-space-md); }
+  .tc-badge-dark span { color: var(--tc-lime); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; }
+
+  .tc-point-card { background: var(--tc-white); border: 0.5px solid var(--tc-border); padding: var(--tc-space-lg); }
+
+  /* Decision tree */
+  #decision { background: var(--tc-linen); }
+  .tc-question { font-family: var(--tc-font-display); font-size: 26px; font-weight: 400; margin: 0 0 var(--tc-space-lg); max-width: var(--tc-content-width); }
+  .tc-yn-row { display: flex; align-items: center; gap: var(--tc-space-md); flex-wrap: wrap; margin-bottom: var(--tc-space-2xl); }
+
+  .tc-yn-btn {
+    font-family: var(--tc-font-body);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--tc-ink);
+    border: 0.5px solid var(--tc-ink);
+    border-radius: 0;
+    padding: 12px 32px;
+    cursor: pointer;
+  }
+  .tc-yn-btn[aria-pressed="true"] { background: var(--tc-ink); color: var(--tc-chalk); }
+
+  .tc-reset-btn {
+    font-family: var(--tc-font-body);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    color: var(--tc-stone);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 12px 8px;
+  }
+  .tc-reset-btn:hover { color: var(--tc-ink); }
+
+  .tc-path-card {
+    background: var(--tc-white);
+    border: 0.5px solid var(--tc-border-strong);
+    padding: var(--tc-space-lg);
+    transition: opacity 0.15s ease, border-color 0.15s ease;
+  }
+  .tc-path-card.is-emphasized { border: 1px solid var(--tc-ink); }
+  .tc-path-card.is-dimmed { opacity: 0.45; }
+  .tc-path-label { font-family: var(--tc-font-body); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tc-stone); margin-bottom: var(--tc-space-xs); }
+  .tc-path-title { font-family: var(--tc-font-display); font-size: 24px; margin: 0 0 var(--tc-space-md); }
+  .tc-path-instruction { margin-bottom: var(--tc-space-lg); }
+
+  /* Timeline */
+  .tc-timeline { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: var(--tc-space-lg); margin-bottom: var(--tc-space-2xl); }
+  @media (max-width: 768px) { .tc-timeline { grid-template-columns: 1fr; } }
+  .tc-timeline-step { border-top: 2px solid var(--tc-ink); padding-top: var(--tc-space-md); }
+  .tc-timeline-index { font-family: var(--tc-font-body); font-size: 12px; color: var(--tc-stone); letter-spacing: 0.1em; }
+  .tc-timeline-title { font-family: var(--tc-font-display); font-size: 20px; margin: var(--tc-space-xs) 0; }
+  .tc-timeline-date { font-size: 13px; color: var(--tc-stone); }
+
+  /* Resources */
+  .tc-resource-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: var(--tc-space-lg); }
+  @media (max-width: 768px) { .tc-resource-row { grid-template-columns: 1fr; } }
+  .tc-resource-card { background: var(--tc-white); border: 0.5px solid var(--tc-border); padding: var(--tc-space-lg); }
+  .tc-resource-card a { display: inline-block; margin-top: var(--tc-space-sm); font-size: 13px; }
+
+  /* Footer */
+  footer { background: var(--tc-ink); color: var(--tc-chalk); padding: var(--tc-space-2xl) 0; margin-top: var(--tc-space-3xl); }
+  footer .tc-logo-word { color: var(--tc-chalk); }
+  footer .tc-logo-box { background: var(--tc-chalk); }
+  footer .tc-logo-box span { color: var(--tc-ink); }
+  .tc-footer-note { font-size: 13px; color: var(--tc-stone); max-width: var(--tc-content-width); margin-top: var(--tc-space-lg); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<header class="tc-topbar">
+  <div class="tc-page tc-logo">
+    <div class="tc-logo-box"><span>C</span></div>
+    <span class="tc-logo-word">The Corporate</span>
+  </div>
+</header>
+
+<section id="hero">
+  <div class="tc-page">
+    <p class="tc-subhead">2026 Supplier Sustainability Engagement Programme</p>
+    <h1 class="tc-h1">Onboarding our Tier 1 suppliers into the <span class="tc-lime-underline">2026</span> sustainability programme</h1>
+    <p class="tc-lede">This page explains what The Corporate is asking of its Tier 1 suppliers, and why. Answer one question below to find the fastest path to respond.</p>
+
+    <div class="tc-grid-4">
+      <div class="tc-stat-tile">
+        <p class="tc-stat-figure">690,000 tCO2e</p>
+        <p class="tc-stat-label">Total footprint, 2023</p>
+      </div>
+      <div class="tc-stat-tile">
+        <p class="tc-stat-figure">71%</p>
+        <p class="tc-stat-label">Sits in Scope 3 — our value chain</p>
+      </div>
+      <div class="tc-stat-tile">
+        <p class="tc-stat-figure">2045</p>
+        <p class="tc-stat-label">Net-zero target year</p>
+      </div>
+      <div class="tc-stat-tile">
+        <p class="tc-stat-figure">500+</p>
+        <p class="tc-stat-label">Tier 1 suppliers</p>
+      </div>
+    </div>
+
+    <div class="tc-hero-cta">
+      <a href="#decision" class="tc-btn-primary">See what to do now</a>
+    </div>
+  </div>
+</section>
+
+<div class="tc-page"><div class="tc-divider"></div></div>
+
+<section id="why">
+  <div class="tc-page tc-content-col">
+    <p class="tc-subhead">Why we're asking</p>
+    <h2 class="tc-h2">This is a shared journey, not a one-off request</h2>
+
+    <div class="tc-why-block">
+      <p class="tc-body">Most of The Corporate's carbon footprint does not sit inside our own plants. It sits with the suppliers in our value chain. Reaching net-zero means working with those businesses directly, not around them.</p>
+    </div>
+
+    <div class="tc-why-block">
+      <p class="tc-body">We are targeting net-zero by 2045, with a 50% reduction against our 2023 baseline by 2030. Supplier data is how we track progress toward both.</p>
+    </div>
+
+    <div class="tc-why-block">
+      <p class="tc-body">New sustainability reporting obligations mean we need clear visibility into supplier performance now. This programme is how we build that visibility together, ahead of when it is required.</p>
+    </div>
+
+    <div class="tc-why-block">
+      <p class="tc-body">This is the start of a working relationship. We're asking every Tier 1 supplier to engage with us across six priority themes:</p>
+      <div class="tc-theme-row">
+        <span class="tc-theme-chip">Climate</span>
+        <span class="tc-theme-chip">Pollution</span>
+        <span class="tc-theme-chip">Water</span>
+        <span class="tc-theme-chip">Circular economy</span>
+        <span class="tc-theme-chip">People</span>
+        <span class="tc-theme-chip">Governance</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="tc-page"><div class="tc-divider"></div></div>
+
+<section id="how-it-works">
+  <div class="tc-page tc-content-col">
+    <div class="tc-badge-dark"><span>Smart Intake</span></div>
+    <h2 class="tc-h2">How it works</h2>
+    <p class="tc-body" style="margin-bottom: var(--tc-space-xl);">We recognise existing standards. If you hold a valid EcoVadis scorecard, it satisfies this programme — no separate assessment needed. If you don't, you complete one structured questionnaire, once.</p>
+
+    <div class="tc-grid-2">
+      <div class="tc-point-card">
+        <h3 class="tc-h3">Recognise existing standards</h3>
+        <p class="tc-body">A current EcoVadis scorecard stands in place of our own assessment. No duplicate work.</p>
+      </div>
+      <div class="tc-point-card">
+        <h3 class="tc-h3">Ask once, then partner</h3>
+        <p class="tc-body">One structured questionnaire, completed a single time. From there, we work together on the priorities it surfaces.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="decision">
+  <div class="tc-page">
+    <p class="tc-subhead">What you do now</p>
+    <h2 class="tc-question">Do you hold a valid EcoVadis scorecard issued within the last 12 months?</h2>
+
+    <div class="tc-yn-row">
+      <button type="button" class="tc-yn-btn" id="btn-yes" aria-pressed="false">Yes</button>
+      <button type="button" class="tc-yn-btn" id="btn-no" aria-pressed="false">No</button>
+      <button type="button" class="tc-reset-btn" id="btn-reset">Reset</button>
+    </div>
+
+    <div class="tc-grid-2">
+      <div class="tc-path-card" id="path-a" data-path="a">
+        <p class="tc-path-label">Path A</p>
+        <h3 class="tc-path-title">EcoVadis</h3>
+        <p class="tc-path-instruction tc-body">Share your current scorecard with your Corporate programme contact.</p>
+        <!-- BUILDER: replace href with the confirmed EcoVadis redirect URL before deploy -->
+        <a href="https://www.ecovadis.com/" target="_blank" rel="noopener" class="tc-btn-primary">Go to EcoVadis</a>
+      </div>
+      <div class="tc-path-card" id="path-b" data-path="b">
+        <p class="tc-path-label">Path B</p>
+        <h3 class="tc-path-title">Questionnaire</h3>
+        <p class="tc-path-instruction tc-body">Download the questionnaire, complete it offline, and return it to your Corporate programme contact.</p>
+        <a href="assets/The_Corporate_Supplier_Questionnaire_2026.xlsx" download class="tc-btn-primary">Download Questionnaire (.xlsx)</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="next">
+  <div class="tc-page">
+    <p class="tc-subhead">What happens next</p>
+    <h2 class="tc-h2">Programme timeline</h2>
+
+    <div class="tc-timeline">
+      <div class="tc-timeline-step">
+        <p class="tc-timeline-index">01</p>
+        <p class="tc-timeline-title">Portal Launch</p>
+        <p class="tc-timeline-date">April 2026</p>
+      </div>
+      <div class="tc-timeline-step">
+        <p class="tc-timeline-index">02</p>
+        <p class="tc-timeline-title">Data Submission deadline</p>
+        <p class="tc-timeline-date">30 September 2026</p>
+      </div>
+      <div class="tc-timeline-step">
+        <p class="tc-timeline-index">03</p>
+        <p class="tc-timeline-title">Review &amp; Scoring</p>
+        <p class="tc-timeline-date">Q4 2026</p>
+      </div>
+      <div class="tc-timeline-step">
+        <p class="tc-timeline-index">04</p>
+        <p class="tc-timeline-title">Partnership Plans</p>
+        <p class="tc-timeline-date">Q1 2027</p>
+      </div>
+    </div>
+
+    <p class="tc-subhead">Resources</p>
+    <div class="tc-resource-row">
+      <div class="tc-resource-card">
+        <h3 class="tc-h3">Supplier Code of Conduct</h3>
+        <p class="tc-body">Our expectations for suppliers across ethics, labour, and environmental practice.</p>
+        <a href="assets/The_Corporate_Supplier_Code_of_Conduct_2026.PDF" download>Download PDF</a>
+      </div>
+      <div class="tc-resource-card">
+        <h3 class="tc-h3">Global Environmental Policy</h3>
+        <p class="tc-body">The Corporate's environmental commitments and operating standards.</p>
+        <a href="assets/The_Corporate_Global_Environmental_Policy.PDF" download>Download PDF</a>
+      </div>
+      <div class="tc-resource-card">
+        <h3 class="tc-h3">EHS help desk</h3>
+        <p class="tc-body">Questions about the programme, the questionnaire, or your submission.</p>
+        <a href="mailto:support@thecorporate.com">Email support@thecorporate.com</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="tc-page">
+    <div class="tc-logo">
+      <div class="tc-logo-box"><span>C</span></div>
+      <span class="tc-logo-word">The Corporate</span>
+    </div>
+    <p class="tc-footer-note">This portal and the resources linked from it are provided to Tier 1 suppliers of The Corporate for the purposes of the 2026 sustainability engagement programme. Please treat their contents as confidential to your organisation and do not redistribute outside it without our consent.</p>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var btnYes = document.getElementById('btn-yes');
+    var btnNo = document.getElementById('btn-no');
+    var btnReset = document.getElementById('btn-reset');
+    var pathA = document.getElementById('path-a');
+    var pathB = document.getElementById('path-b');
+
+    function setNeutral() {
+      btnYes.setAttribute('aria-pressed', 'false');
+      btnNo.setAttribute('aria-pressed', 'false');
+      pathA.classList.remove('is-emphasized', 'is-dimmed');
+      pathB.classList.remove('is-emphasized', 'is-dimmed');
+    }
+
+    function emphasize(winner, loser, activeBtn, inactiveBtn) {
+      winner.classList.add('is-emphasized');
+      winner.classList.remove('is-dimmed');
+      loser.classList.add('is-dimmed');
+      loser.classList.remove('is-emphasized');
+      activeBtn.setAttribute('aria-pressed', 'true');
+      inactiveBtn.setAttribute('aria-pressed', 'false');
+    }
+
+    btnYes.addEventListener('click', function () {
+      emphasize(pathA, pathB, btnYes, btnNo);
+    });
+
+    btnNo.addEventListener('click', function () {
+      emphasize(pathB, pathA, btnNo, btnYes);
+    });
+
+    btnReset.addEventListener('click', setNeutral);
+  })();
+</script>
+
+</body>
+</html>
