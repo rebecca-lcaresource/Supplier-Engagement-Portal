@@ -2,9 +2,9 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 2 — v2.0 build complete, deploy in progress (debugging 404)
+**Session:** 2 — v2.0 build complete, deploy in progress (branch mismatch just fixed)
 **Last updated:** 7 July 2026 — by Claude Code, session 2
-**Live URL:** https://supplier-engagement-portal.netlify.app/ (404 as of this update — see Known issues)
+**Live URL:** https://supplier-engagement-portal.netlify.app/ (error as of last check — `main` just fast-forwarded to include the app + netlify.toml, awaiting confirmation the next auto-deploy succeeds)
 
 ## Current state
 v1.0 is still the live deploy at the URL above — the v2.0 React app is code-complete, builds cleanly (`npm run build`, no errors), and has passed a full local acceptance-criteria walkthrough, but has not yet been pushed to Netlify (that needs a Netlify dashboard build-config change first, see Remaining work). All 15 acceptance criteria in docs/product-spec.md §13 verified locally:
@@ -12,14 +12,15 @@ v1.0 is still the live deploy at the URL above — the v2.0 React app is code-co
 
 Also fixed a bundle-size issue found during this pass: jsPDF and xlsx are now dynamically imported inside the functions that use them rather than statically, so their weight (and jsPDF's unused html2canvas/dompurify sub-dependencies) only loads when a supplier actually reaches Door 2 or Confirmation — cut the main JS bundle from ~911 KB to ~180 KB.
 
-The builder connected Netlify to GitHub for CI-based deploys, tracking the `claude/first-session-setup-e9g5z8` branch (confirmed correct branch — not a main/branch mismatch). The resulting deploy 404s. Root cause: no `netlify.toml` existed, so the site had no declared build command / publish directory — it was almost certainly still running with v1.0's static "no build, publish root" settings, which can't produce a working build for a Vite app (no `dist/` gets created, so Netlify serves nothing at the site root). Added `netlify.toml` at the repo root (`command = "npm run build"`, `publish = "dist"`, `NODE_VERSION = "22"`) so build settings are version-controlled rather than dependent on manually-kept-in-sync dashboard config. CLAUDE.md's Deployment line updated to describe the new GitHub-connected CI model. Not yet confirmed fixed — needs the builder to trigger a new deploy after this pushes and check the result.
+The builder connected Netlify to GitHub for CI-based deploys. Two issues surfaced and were fixed in sequence: (1) no `netlify.toml` existed, so build command/publish directory weren't declared — added one (`npm run build`, publish `dist`, Node 22). (2) The deploy still errored after that; the published deploy banner showed `main@744779b` — Netlify's production branch was actually `main`, not our working branch as initially believed, and `main` still had zero v2.0 work (no package.json, no netlify.toml — just the original raw file upload). Since `main` was confirmed a strict git ancestor of our branch (verified with `git merge-base --is-ancestor`), fast-forwarded `origin/main` to our branch's HEAD (`2f3f56a`) — a zero-risk, lossless push. `main` now has the full v2.0 app and netlify.toml; awaiting confirmation the resulting auto-deploy succeeds.
 [Rule: this section describes what exists and works right now — never what is planned. Completed checklist items get absorbed here in compressed form.]
 
 ## Last session
-Session 1: ran First Session Setup, built and deployed the v1.0 static page. Session 2 (this one): spec revised to v2.0; built the full React app; ran a full local acceptance-criteria pass (all 15 verified); handed off manual drag-and-drop builds (hit a 404, likely a folder-nesting issue on a first attempt); builder then connected Netlify to GitHub for CI deploys, which also 404'd — diagnosed as a missing `netlify.toml` (no build command/publish directory configured) and fixed by adding one. Still open: confirm the CI deploy now succeeds, and the real EcoVadis URL.
+Session 1: ran First Session Setup, built and deployed the v1.0 static page. Session 2 (this one): spec revised to v2.0; built the full React app; ran a full local acceptance-criteria pass (all 15 verified); handed off manual drag-and-drop builds (hit a 404, likely folder-nesting); builder connected Netlify to GitHub for CI deploys, which errored — added a missing `netlify.toml`, then discovered Netlify's production branch was `main` (not our working branch), which had none of the app. Fast-forwarded `main` to include everything. Still open: confirm the resulting deploy succeeds, and the real EcoVadis URL.
 [Rule: 3–5 lines maximum. Replace each session — what was built, changed, or fixed.]
 
-- [ ] Confirm the next Netlify deploy (triggered by this push, since GitHub is now connected) succeeds and the live URL shows v2.0, not a 404
+## Remaining work
+- [ ] Confirm the Netlify deploy triggered by the `main` fast-forward succeeds and the live URL shows v2.0, not an error
 - [ ] Swap the placeholder EcoVadis URL (`https://www.ecovadis.com/`) for the confirmed redirect URL, then push (auto-redeploys via CI now)
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
