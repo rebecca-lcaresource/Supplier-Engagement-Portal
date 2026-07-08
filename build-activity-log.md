@@ -4,12 +4,15 @@
 **Repo:** Supplier-Engagement-Portal (GitHub)
 **Live site:** https://supplier-engagement-portal.netlify.app/
 **Log compiled:** 7 July 2026
+**Status note added:** 8 July 2026
+
+> **Current status (8 July 2026):** This log narrates the *pre-build* Tool Architect → Project Governor → Claude Code workflow. It was compiled at the point where v2.0 was specced but not yet built. **v2.0 has since been built, deployed, and confirmed live** (7 July 2026), and audited against the spec (8 July 2026). The "next steps" in Stage 9 are done — see "Open items to carry forward" at the bottom for the current picture. The single genuinely-open item is the placeholder EcoVadis URL. Do not read Stage 9 as outstanding work.
 
 ---
 
 ## Overview
 
-This log records the full pre-build and iteration workflow for the Supplier Sustainability Portal, a public landing page onboarding The Corporate's Tier 1 suppliers into the 2026 sustainability engagement programme. Two versions are covered: **v1.0** (a static informational page, built and deployed) and **v2.0** (a React rebuild adding in-tool questionnaire submission — planned, not yet built). The workflow followed the SustainOS AILab sequence: **Tool Architect** (writes the spec) → **Project Governor** (writes the build-governance files) → **Claude Code** (builds).
+This log records the full pre-build and iteration workflow for the Supplier Sustainability Portal, a public landing page onboarding The Corporate's Tier 1 suppliers into the 2026 sustainability engagement programme. Two versions are covered: **v1.0** (a static informational page, built and deployed) and **v2.0** (a React rebuild adding in-tool questionnaire submission — built, deployed, and live as of 7 July 2026; see the status note above). The workflow followed the SustainOS AILab sequence: **Tool Architect** (writes the spec) → **Project Governor** (writes the build-governance files) → **Claude Code** (builds).
 
 ---
 
@@ -102,8 +105,10 @@ This log records the full pre-build and iteration workflow for the Supplier Sust
 
 ## Open items to carry forward
 
-- [ ] Swap the placeholder EcoVadis URL for the real redirect and redeploy (carried over from v1.0).
-- [ ] Build v2.0 in Claude Code (the `(v2 revision)` checklist).
-- [ ] Confirm the S1–S7 questionnaire field mapping (derived from the Excel) during the v2.0 build.
-- [ ] Confirm the landing questionnaire button label and the upload-missing-required behaviour.
-- [ ] Switch the Netlify site to build-on-deploy, then redeploy v2.0 over v1.0.
+*Updated 8 July 2026 — most of the original list is now done.*
+
+- [x] Build v2.0 in Claude Code — **done 7 July 2026** (Guided Form, both doors, PDF export; all 15 acceptance criteria verified).
+- [x] Confirm the S1–S7 questionnaire field mapping (derived from the Excel) — **confirmed 7 July 2026**; lives in `src/data/questionnaireFields.js`.
+- [x] Confirm the landing button label and the upload-missing-required behaviour — **settled 8 July 2026** ("Complete Questionnaire" kept; block-Submit-on-missing kept).
+- [x] Switch the Netlify site to build-on-deploy, then redeploy v2.0 over v1.0 — **done 7 July 2026**; CI now auto-deploys on every push to `main`.
+- [ ] Swap the placeholder EcoVadis URL for the real redirect and redeploy — **still open** (carried over from v1.0; the current link is only the EcoVadis homepage).

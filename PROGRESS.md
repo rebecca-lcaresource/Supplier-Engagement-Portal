@@ -2,8 +2,8 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 2 — v2.0 live
-**Last updated:** 7 July 2026 — by Claude Code, session 2
+**Session:** 3 — v2.0 audited; the two open defaults settled
+**Last updated:** 8 July 2026 — by Claude Code, session 3
 **Live URL:** https://supplier-engagement-portal.netlify.app/ — v2.0 confirmed live and working by the builder
 
 ## Current state
@@ -13,10 +13,12 @@ v2.0 is live at the URL above and confirmed working by the builder — the React
 Also fixed a bundle-size issue found during this pass: jsPDF and xlsx are now dynamically imported inside the functions that use them rather than statically, so their weight (and jsPDF's unused html2canvas/dompurify sub-dependencies) only loads when a supplier actually reaches Door 2 or Confirmation — cut the main JS bundle from ~911 KB to ~180 KB.
 
 Deploy debugging chain (all resolved): (1) no `netlify.toml` existed, so build command/publish directory weren't declared — added one (`npm run build`, publish `dist`, Node 22). (2) Netlify's production branch turned out to be `main`, which still had zero v2.0 work — fast-forwarded `origin/main` to our branch's HEAD (verified a safe ancestor first with `git merge-base --is-ancestor`). (3) The builder then deleted the Netlify project entirely and recreated it fresh, causing a temporary "lost everything" scare — but this only affects Netlify's deployment target, never the GitHub repo, so no code was at risk. Walked through re-connecting the new project to GitHub (Import from Git, repo `rebecca-lcaresource/Supplier-Engagement-Portal`, branch `main`); confirmed via the Deploys tab it shows "Published main@a277926," and the builder verified in an incognito window that "Complete Questionnaire" opens the Door Choice screen (the clear v2.0-vs-v1.0 tell). **v2.0 is live and confirmed working end-to-end in production.** Deployment is CI-based going forward: any push to `main` auto-redeploys.
+
+**Session 3 (8 July 2026) — audit + defaults settled.** Ran a full audit of the live v2.0 against docs/product-spec.md v2.0: all 15 acceptance criteria re-confirmed against the current code. `npm run build` is clean; Door 2's upload parser was re-verified cell-by-cell against the shipped `The_Corporate_Supplier_Questionnaire_2026.xlsx` (all 10 structural anchors and all 27 field rows line up exactly); a grep of `src/` for network/storage calls (fetch / XHR / sendBeacon / localStorage / sessionStorage / indexedDB) returned zero matches, so the no-data-leaves-the-browser invariant still holds. The two builder-overridable defaults are now **settled** and no longer open: Door 2 keeps blocking Submit on a missing required answer until a corrected file is uploaded, and the landing questionnaire button stays labelled "Complete Questionnaire" (confirmed correct vs. the old v1.0 "Download Assessment" — the download now lives only on Door 2's "Download Template" button). No code changes were needed — the app already matched both confirmed choices.
 [Rule: this section describes what exists and works right now — never what is planned. Completed checklist items get absorbed here in compressed form.]
 
 ## Last session
-Session 1: ran First Session Setup, built and deployed the v1.0 static page. Session 2 (this one): spec revised to v2.0; built the full React app; ran a full local acceptance-criteria pass (all 15 verified); worked through a long deploy debugging chain (folder-nesting 404, missing netlify.toml, a main/working-branch mismatch, then the builder deleting and recreating the Netlify project entirely) — ended with v2.0 confirmed live and working in production via a fresh incognito check. Still open: the real EcoVadis URL.
+Session 3 (this one): audited the live v2.0 against spec v2.0 — all 15 acceptance criteria re-confirmed, the Door 2 parser re-verified against the shipped Excel, and the no-data-leaves-the-browser invariant re-checked. Settled the two open defaults with the builder (block-on-missing-upload kept; "Complete Questionnaire" label kept, confirmed against the v1.0 "Download Assessment" it replaced) — no code changes needed. Also refreshed build-activity-log.md, which had gone stale claiming v2.0 was "planned, not yet built." Still open: the real EcoVadis redirect URL.
 [Rule: 3–5 lines maximum. Replace each session — what was built, changed, or fixed.]
 
 ## Remaining work
@@ -42,13 +44,14 @@ Session 1: ran First Session Setup, built and deployed the v1.0 static page. Ses
 - PDF export uses jsPDF's built-in 'times' (serif, for headings) and 'helvetica' (sans, for body) rather than embedding the actual Playfair Display/DM Sans TTFs — approximates the brand's serif/sans pairing without the complexity and repo weight of font embedding. Brand colors (Ink/Stone/Chalk), the black header band with logo mark, and square-corner layout are applied exactly.
 - `jsPDF` and `xlsx` are dynamically imported inside `generatePdf.js`/`parseUpload.js` rather than statically at module load, since jsPDF pulls in unused html2canvas/dompurify sub-dependencies — keeps both libraries out of the initial bundle, loading only when a supplier reaches Door 2 or Confirmation. Cut the main JS bundle from ~911 KB to ~180 KB.
 - Landing Page's `.tc-divider` (the two horizontal rules between Hero/Why/How it works) recolored to Dark Blue (`#00008B`) and thickened to 1px, per explicit builder request — a deliberate one-off exception to the brand's "never blue" rule, not a change to the brand skill or CLAUDE.md hard rule itself.
+- Door 2 missing-required-answer behavior: confirmed to **block Submit until a corrected file is uploaded** (the spec §9 default, mirroring Door 1) — builder confirmed 8 July 2026, not overridden.
+- Landing questionnaire button label confirmed as **"Complete Questionnaire"** — builder confirmed 8 July 2026. It routes to the Door Choice screen, so the old v1.0 "Download Assessment" label no longer fits; the Excel download now lives solely on Door 2's "Download Template" button.
 [Rule: one line per decision made during the build that is not in the spec — prompt structures, field formats, naming choices, library picks. Future sessions depend on these to stay consistent.]
 
 ## Known issues
 - Brand deviation, intentional: the Landing Page's two section dividers are Dark Blue, not Stone/Ink — see Build decisions. Future sessions should not "fix" this back to brand-compliant without checking with the builder first, since it was a deliberate explicit request.
 - Blocking deploy: EcoVadis redirect URL is still a placeholder (`https://www.ecovadis.com/`) — swap in the real URL before deploy.
-- (v2) Upload with missing required answers: default is to block Submit until a corrected file is uploaded — builder may override (spec v2.0 §15).
-- (v2) Landing questionnaire button label assumed "Complete Questionnaire" — builder may change (spec v2.0 §15).
+- Optional polish (cosmetic, non-blocking — from the session 3 audit): validation error text uses a non-brand red (`#C0392B`); the Guided Form shows two "Back" controls with different meanings (header exits to Door Choice, footer steps back one section); the PDF uses jsPDF's built-in times/helvetica as stand-ins for Playfair/DM Sans. None affect the acceptance criteria — address only if the builder wants the extra polish.
 - `xlsx` (SheetJS), the only client-side .xlsx/.csv parsing library available via the npm registry from this environment, is pinned at 0.18.5 with two known high-severity advisories (prototype pollution, ReDoS) that SheetJS has not patched on npm — fixed releases exist only on SheetJS's own CDN, which this sandboxed environment's network policy can't reach. Risk is contained (parsing happens entirely client-side on a file the supplier uploads themselves; nothing server-side or networked is exposed), but the builder may want to source the patched tarball directly from cdn.sheetjs.com and swap it in outside this environment.
 [Rule: bugs, edge cases, and deferred fixes. One line each. Remove when resolved.]
 
