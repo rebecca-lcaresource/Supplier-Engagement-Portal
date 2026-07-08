@@ -1,6 +1,9 @@
 import { useState } from 'react';
 
-// BUILDER: replace with the confirmed EcoVadis redirect URL before deploy
+// EcoVadis destination. Builder confirmed 8 July 2026 that only the EcoVadis
+// homepage is available — there is no Corporate-specific scorecard deep link
+// yet — so this is the accepted interim link, not a placeholder. Revisit if
+// EcoVadis later provides a targeted submission/redirect URL.
 const ECOVADIS_URL = 'https://www.ecovadis.com/';
 
 export default function DecisionTree({ id, onCompleteQuestionnaire }) {
