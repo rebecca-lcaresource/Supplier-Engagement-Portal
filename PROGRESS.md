@@ -2,9 +2,9 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 3 — v2.0 audited; the two open defaults settled
-**Last updated:** 8 July 2026 — by Claude Code, session 3
-**Live URL:** https://supplier-engagement-portal.netlify.app/ — v2.0 confirmed live and working by the builder
+**Session:** 4 — GitHub Pages backup deploy added
+**Last updated:** 8 July 2026 — by Claude Code, session 4
+**Live URL:** https://supplier-engagement-portal.netlify.app/ (primary, Netlify) · GitHub Pages backup pending one-time activation → https://rebecca-lcaresource.github.io/Supplier-Engagement-Portal/
 
 ## Current state
 v2.0 is live at the URL above and confirmed working by the builder — the React app, all 7 questionnaire sections, both doors, and the PDF export are deployed and functioning in production, not just locally. The v2.0 React app is code-complete, builds cleanly (`npm run build`, no errors), and passed a full local acceptance-criteria walkthrough before deploy. All 15 acceptance criteria in docs/product-spec.md §13 verified locally:
@@ -18,11 +18,12 @@ Deploy debugging chain (all resolved): (1) no `netlify.toml` existed, so build c
 [Rule: this section describes what exists and works right now — never what is planned. Completed checklist items get absorbed here in compressed form.]
 
 ## Last session
-Session 3 (this one): audited the live v2.0 against spec v2.0 — all 15 acceptance criteria re-confirmed, the Door 2 parser re-verified against the shipped Excel, and the no-data-leaves-the-browser invariant re-checked. Settled the two open defaults with the builder (block-on-missing-upload kept; "Complete Questionnaire" label kept, confirmed against the v1.0 "Download Assessment" it replaced) — no code changes needed. Also refreshed build-activity-log.md, which had gone stale claiming v2.0 was "planned, not yet built." Still open: the real EcoVadis redirect URL.
+Session 4 (this one): added GitHub Pages as a backup deploy target alongside Netlify, after the builder hit trouble with Netlify. Made the Vite base configurable (`VITE_BASE`, defaulting to `/` so Netlify is untouched) and prefixed the three in-app asset links with `import.meta.env.BASE_URL` so the app works from both root (Netlify) and the `/Supplier-Engagement-Portal/` subpath (Pages); added `.github/workflows/deploy-pages.yml`. Verified both build modes locally. One manual step left for the builder: enable Pages with Source = "GitHub Actions" (see Remaining work). Session 3 had settled the two defaults + EcoVadis link and refreshed build-activity-log.md.
 [Rule: 3–5 lines maximum. Replace each session — what was built, changed, or fixed.]
 
 ## Remaining work
-- None currently open. (The EcoVadis link is settled — see Build decisions / Known issues; only revisit if EcoVadis provides a targeted redirect URL.)
+- [ ] One-time manual step to activate the GitHub Pages backup: in the repo on GitHub, Settings → Pages → Build and deployment → Source = "GitHub Actions". After that, every push to `main` builds and publishes to https://rebecca-lcaresource.github.io/Supplier-Engagement-Portal/ via `.github/workflows/deploy-pages.yml`.
+- (EcoVadis link is settled — see Build decisions / Known issues; only revisit if EcoVadis provides a targeted redirect URL.)
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions
@@ -47,6 +48,7 @@ Session 3 (this one): audited the live v2.0 against spec v2.0 — all 15 accepta
 - Door 2 missing-required-answer behavior: confirmed to **block Submit until a corrected file is uploaded** (the spec §9 default, mirroring Door 1) — builder confirmed 8 July 2026, not overridden.
 - Landing questionnaire button label confirmed as **"Complete Questionnaire"** — builder confirmed 8 July 2026. It routes to the Door Choice screen, so the old v1.0 "Download Assessment" label no longer fits; the Excel download now lives solely on Door 2's "Download Template" button.
 - EcoVadis button destination: builder confirmed 8 July 2026 that only the EcoVadis **homepage** (`https://www.ecovadis.com/`) is available — there is no Corporate-specific scorecard deep link. Treated as the confirmed interim link, no longer a deploy-blocking placeholder; revisit only if EcoVadis later provides a targeted redirect.
+- Dual deploy (Netlify + GitHub Pages backup): Netlify serves from root, Pages serves from the `/Supplier-Engagement-Portal/` subpath. Handled with one base config, not a fork — `vite.config.js` reads `base` from `process.env.VITE_BASE` (defaults to `/` for Netlify; the Pages Actions workflow sets it to `/Supplier-Engagement-Portal/`), and the three in-app asset `<a href>`s are prefixed with `import.meta.env.BASE_URL` so they resolve under either base. Verified both builds locally (root + subpath served and browser-loaded). Pages build/publish is `.github/workflows/deploy-pages.yml` (Node 22, `npm ci && npm run build`, `actions/deploy-pages`), triggered on push to `main`. No client-side routing in the app, so no SPA 404 fallback is needed.
 [Rule: one line per decision made during the build that is not in the spec — prompt structures, field formats, naming choices, library picks. Future sessions depend on these to stay consistent.]
 
 ## Known issues
