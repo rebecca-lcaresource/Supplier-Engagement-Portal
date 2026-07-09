@@ -2,9 +2,9 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 4 — GitHub Pages backup deploy added
+**Session:** 4 — GitHub Pages backup deploy added and live
 **Last updated:** 8 July 2026 — by Claude Code, session 4
-**Live URL:** https://supplier-engagement-portal.netlify.app/ (primary, Netlify) · GitHub Pages backup pending one-time activation → https://rebecca-lcaresource.github.io/Supplier-Engagement-Portal/
+**Live URL:** https://supplier-engagement-portal.netlify.app/ (primary, Netlify) · https://rebecca-lcaresource.github.io/Supplier-Engagement-Portal/ (backup, GitHub Pages — live)
 
 ## Current state
 v2.0 is live at the URL above and confirmed working by the builder — the React app, all 7 questionnaire sections, both doors, and the PDF export are deployed and functioning in production, not just locally. The v2.0 React app is code-complete, builds cleanly (`npm run build`, no errors), and passed a full local acceptance-criteria walkthrough before deploy. All 15 acceptance criteria in docs/product-spec.md §13 verified locally:
@@ -22,8 +22,7 @@ Session 4 (this one): added GitHub Pages as a backup deploy target alongside Net
 [Rule: 3–5 lines maximum. Replace each session — what was built, changed, or fixed.]
 
 ## Remaining work
-- [ ] One-time manual step to activate the GitHub Pages backup: in the repo on GitHub, Settings → Pages → Build and deployment → Source = "GitHub Actions". After that, every push to `main` builds and publishes to https://rebecca-lcaresource.github.io/Supplier-Engagement-Portal/ via `.github/workflows/deploy-pages.yml`.
-- (EcoVadis link is settled — see Build decisions / Known issues; only revisit if EcoVadis provides a targeted redirect URL.)
+- None currently open. GitHub Pages backup is live (builder set Source = "GitHub Actions" 8 July 2026; the workflow's build+deploy both went green on re-run, deployment confirmed via the GitHub API). Every push to `main` now deploys to both Netlify and Pages. (EcoVadis link is settled — see Build decisions / Known issues; only revisit if EcoVadis provides a targeted redirect URL.)
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions
