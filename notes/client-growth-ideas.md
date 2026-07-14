@@ -7,12 +7,13 @@
 
 ## Where things stand (so tomorrow starts from a clean base)
 
-The Supplier Sustainability Portal is **built, deployed, and live** on two independent URLs, both auto-deploying from `main`:
+The Supplier Sustainability Portal is **built, deployed, and live**, auto-deploying from `main`:
 
 | | URL | Host |
 |---|---|---|
 | Primary | https://supplier-engagement-portal.netlify.app/ | Netlify |
-| Backup | https://rebecca-lcaresource.github.io/Supplier-Engagement-Portal/ | GitHub Pages |
+
+(The GitHub Pages backup was retired in July 2026 — Netlify is the sole deploy target per product-spec v3.0.)
 
 That project is done for now (only open item: swap the interim EcoVadis homepage link if EcoVadis ever gives a targeted URL). The ideas below are a **new** direction — client acquisition — not more work on the portal.
 
