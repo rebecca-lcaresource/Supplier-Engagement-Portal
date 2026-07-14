@@ -1,8 +1,8 @@
 # Product Spec — The Corporate Supplier Sustainability Portal 2026
 
-**Version:** 2.0
-**Date:** 5 July 2026
-**Author:** Zyad Hatquai
+**Version:** 3.0
+**Date:** 14 July 2026
+**Author:** Rebecca LeBlanc
 **Status:** Confirmed
 
 ---
@@ -11,13 +11,15 @@
 
 **Tool name:** The Corporate Supplier Sustainability Portal 2026
 
-**What it does:** A single-page public landing page that onboards Tier 1 suppliers into The Corporate's ESRS-aligned sustainability assessment programme. It communicates the company's net-zero targets, explains the two submission paths, and routes each supplier to the correct action. Route one is the EcoVadis scorecard. Route two, the questionnaire, now lets suppliers submit their answers directly through the tool, either by filling in a guided in-tool form or by downloading, completing offline, and uploading the finished file for review before submitting.
+**What it does:** A public page that routes Tier 1 suppliers to either the EcoVadis scorecard or The Corporate's questionnaire, and — new in v3.0 — **stores what they submit in a database**. Suppliers taking the EcoVadis route register their details before being redirected. Suppliers taking the questionnaire route complete it either through a guided in-tool form or by downloading, completing offline, and uploading the workbook; their answers are written to the database on submit.
 
-**Who uses it:** Tier 1 supplier contacts, sustainability managers, EHS leads, and procurement representatives at supplier organisations, who receive the URL directly from The Corporate's procurement or EHS team.
+**Who uses it:** Tier 1 suppliers of The Corporate — external, unknown to the tool in advance, arriving via a link. Rebecca LeBlanc reads the collected responses in the Supabase dashboard; **no one reads them inside the app**.
 
-**Why it exists:** To formally launch The Corporate's 2026 supplier sustainability assessment without requiring direct explanation from the internal team, and to remove the email round-trip from the questionnaire route. This version is also a UX experiment: it validates whether suppliers can complete and submit the full questionnaire in-browser before any backend delivery is built.
+**Why it exists:** v2.0 validated the submission flow but deliberately stored nothing — a supplier could complete the full questionnaire and the tool would forget it the moment the tab closed. v3.0 makes the portal real: responses persist, and The Corporate can see who has responded, which route they took, and what they said.
 
-**Build status:** Iteration. Previous version (v1.0) was a static single-page site with two routes: EcoVadis (external link, unchanged) and Excel download (offline completion, returned by email, outside the tool). This build replaces the email return step with two in-tool submission doors on the questionnaire route. Nothing is stored or emailed in this version; it is explicitly scoped as an experiment to validate the submission flow.
+**Build status:** Iteration. v2.0 (live, React + Vite + Tailwind, both doors, PDF export, nothing stored) is working in production. v3.0 adds a Supabase database, an EcoVadis registration screen, and GDPR consent. Everything in v2.0 is retained unless stated otherwise.
+
+> **The central change:** v2.0's defining hard rule was *"no supplier input ever leaves the browser."* **v3.0 deletes that rule.** Supplier input is now transmitted to and stored in Supabase. Any acceptance criterion, code comment, or CLAUDE.md rule asserting that nothing leaves the browser is obsolete and must be removed.
 
 ---
 
@@ -25,61 +27,53 @@
 
 ### Data Model
 
-**Decision:** D2
+**Decision:** D3 (promoted from D2)
 
 | Label | What it means | This tool? |
 |-------|--------------|-----------|
-| D1 — Hardcoded | All data is written into the code by the developer. Users cannot input anything that persists. The tool displays what the developer put in. | No |
-| D2 — Session | Data enters the tool during use and disappears when the tab closes. No database. Covers both uploaded files and form inputs. | Yes |
-| D3 — Persisted | Data is written to a database and survives after the session ends. Supabase is required. | No |
+| D1 — Hardcoded | All data is written into the code by the developer. | No |
+| D2 — Session | Data enters the tool during use and disappears when the tab closes. No database. | No — was v2.0 |
+| D3 — Persisted | Data is written to a database and survives after the session ends. | Yes |
 
-**Reason:** Suppliers now type answers into a guided form or upload a completed file, and the tool reads that data back to them during the session. Nothing is written to a database, sent by email, or otherwise transmitted anywhere. It exists only in the browser for the duration of that visit and is discarded the moment the tab closes. This version deliberately validates the submission experience before any persistence is added.
+**Reason:** Supplier submissions must be retrievable by The Corporate after the supplier closes the tab. That is the entire purpose of v3.0.
 
-**D3 triggers — none apply, confirmed during the interview:**
-- [ ] Data must be retrievable after the session ends
-- [ ] Multiple sessions contribute to the same dataset
+**D3 triggers met:**
+- [x] Data must be retrievable after the session ends
+- [x] Multiple sessions contribute to the same dataset (each supplier submits independently; all land in one dataset)
 - [ ] An audit trail or history is needed
-- [ ] Data submitted by one person must be visible to another
+- [ ] Data submitted by one person must be visible to another *(inside the app — no; reading happens in the Supabase dashboard)*
 - [ ] Results must be accessible via a URL after the session ends
-- [ ] Files uploaded by users must be stored and retrievable later
+- [ ] Files uploaded by users must be stored and retrievable later *(uploads are parsed client-side; the file itself is not stored)*
 
 ---
 
 ### Access Model
 
-**Decision:** A1
+**Decision:** A1 — unchanged
 
 | Label | What it means | This tool? |
 |-------|--------------|-----------|
 | A1 — Public | Anyone with the URL can use it. No login, no account required. | Yes |
-| A2 — Authentication | Users must log in. All logged-in users see the same thing and have the same permissions. | No |
-| A3 — Authorization | Users must log in and have different roles. Different roles see different data or have different permissions. | No |
+| A2 — Authentication | Users must log in. | No |
+| A3 — Authorization | Users must log in and have different roles. | No |
 
-**Reason:** The page is still distributed to Tier 1 suppliers as a direct link. Suppliers self-identify by typing their company details into Section 1 of the form, the same as today. No login or account is required for this version.
+**Reason:** Suppliers arrive via a link and must not have to create accounts. **The portal is write-only** — it can insert supplier and submission records but can never read them back. There is no screen anywhere in the app that displays stored data, so a public URL exposes nothing. Reading is done by Rebecca in the Supabase dashboard, authenticated by Supabase itself, outside the app.
 
-> **Promotion rule:** Auth requires a database. If the access model is A2 or A3, the data model is D3, even when all displayed content is fixed. Not applicable here since A1 is confirmed.
+> **This is the security invariant of v3.0.** A1 + D3 is only safe because reads are impossible from the client. See Section 6.
 
 ---
 
 ### Tier
 
-**Tier:** 1
+**Tier:** 2 (promoted from Tier 1)
 
-| Tier | D+A combination | Stack | Deployment |
-|------|----------------|-------|------------|
-| 1 | D1+A1 or D2+A1 | Netlify only | Netlify |
-| 2 | D3+A1 | Netlify + Supabase (no auth) | Netlify |
-| 3 | D3+A2 or D3+A3 | Netlify + Supabase (auth + RLS) | Netlify |
-
-D2 + A1 keeps this tool at Tier 1 in plain language: no database to build, no login system, still a Netlify-only static deploy. The added complexity is entirely in the client-side interaction, not the architecture.
+D3 + A1 → Tier 2. Netlify + Supabase, no auth.
 
 ---
 
 ### Standalone or Stack
 
-**This tool is:** Standalone. It does not share a database with any other tool.
-
-> A mixed access pattern (public submission plus an internal review side) was discussed and explicitly deferred for this version. See Section 12.
+**This tool is:** Standalone. The Supplier Sustainability Scorecard (a separate tool) currently has reviewers key supplier answers in by hand and does not read this database. Connecting the Scorecard to this database — making the two a Stack — is explicitly deferred (Section 12).
 
 ---
 
@@ -89,29 +83,19 @@ D2 + A1 keeps this tool at Tier 1 in plain language: no database to build, no lo
 
 **Active:** No
 
-Reading the uploaded file back (Door 2) is structural cell-to-field matching only. It does not use AI to interpret free text.
-
----
-
 ### Export Arm
 
-**Active:** Yes
+**Active:** Yes — unchanged from v2.0
 
 | Detail | Answer |
 |--------|--------|
-| Format | Both (XLSX and PDF) |
-| What is exported | (1) The unchanged blank questionnaire template, The_Corporate_Supplier_Questionnaire_2026.xlsx, now downloaded from within Door 2 rather than directly from the landing page. (2) New: a branded PDF summary of the supplier's submitted answers, generated client-side after either door's submission, so the supplier has a record since nothing else is stored or emailed. |
-| PDF design intent | The Corporate brand throughout: Playfair Display for headings, DM Sans for body text, Ink / Stone / Linen / Chalk / White colour tokens, square corners, no shadows. A straightforward listing of the supplier's answers, one section per heading, S1 through S7, in order. Header includes The Corporate logo and the title "Supplier Questionnaire Submission." Footer includes the submission date and which door was used (in-tool form or file upload). No cover page. |
-
----
+| Format | XLSX (template download) and PDF (submission summary) |
+| What is exported | (1) The unchanged questionnaire template, downloaded from within Door 2. (2) A branded client-side PDF summary of the supplier's submitted answers (S1–S7, door used, date), offered on the Confirmation screen. |
+| PDF design intent | Unchanged from v2.0 — branded header, section-by-section listing of answers, per `the-corporate-brand.skill`. Generated client-side; no server. |
 
 ### Email Arm
 
-**Active:** No
-
-Confirmed explicitly: no email is sent at any point in this version, on submission or otherwise.
-
----
+**Active:** No — no confirmation email is sent to the supplier. The Confirmation screen and the downloadable PDF are the supplier's record.
 
 ### Scheduled Automation Arm
 
@@ -125,137 +109,197 @@ Confirmed explicitly: no email is sent at any point in this version, on submissi
 
 | Detail | Answer |
 |--------|--------|
-| Frontend framework | React + Vite + Tailwind. Upgraded from the v1.0 HTML/CSS/JS build. A 7-section wizard with free back-and-forth navigation, a second data-entry path that feeds the same review and confirmation screens, client-side file parsing, and client-side PDF generation is state-heavy enough to warrant the framework. |
-| Deployment target | Netlify |
-| Netlify MCP | Not active. Deployment is done manually through the Netlify dashboard after each build. |
+| Frontend framework | React + Vite + Tailwind — unchanged from v2.0 |
+| Deployment target | **Netlify — the sole deploy target.** CI-based: every push to `main` auto-deploys. Build settings live in `netlify.toml` (`npm run build`, publish `dist`, Node 22). **The GitHub Pages backup deploy is retired** (disabled by the builder, 14 July 2026) — a Pages build would lack the Supabase environment variables and would silently fail to record submissions, which is worse than having no backup. Claude Code must remove `.github/workflows/deploy-pages.yml` and any Pages-specific config (including the `VITE_BASE` subpath handling, which existed only for Pages). Vite `base` returns to `/`. |
+| Netlify MCP | Not active |
 
-**GitHub:** This iteration continues in the existing repository used for the v1.0 build (the one currently deploying supplier_onboarding.html). The updated product-spec.md, CLAUDE.md, and PROGRESS.md replace the v1.0 versions at the repo root before the build session opens. Claude Code assumes the repo exists, commits regularly, and pushes to main. It does not create or configure the repo. See Section 15 for the confirmation this covers.
+### Supabase project
 
----
+| Detail | Answer |
+|--------|--------|
+| Project name | Supplier-Engagement-Portal |
+| Project ID / ref | `hqqngissvcbevktcizit` |
+| Region | us-east-1 |
+| Postgres | 17 |
+| Status | ACTIVE_HEALTHY — **verified 14 July 2026** |
+| Existing schema | **None — the project is empty (zero tables in `public`).** |
 
-### CONDITIONAL: Supabase project
+> **New-project path:** because the project contains no tables, Claude Code creates the entire schema itself via the Supabase MCP (tables, RLS policies, indexes) and produces `supabase-setup.md` documenting what it created. The builder does not write SQL and does not need to prepare a schema in advance.
 
-N/A. Tier 1, no database.
+### Stack
 
----
-
-### CONDITIONAL: Stack membership
-
-N/A. Standalone tool.
+N/A — standalone.
 
 ---
 
 ## Section 5 — Data Architecture
 
-N/A. Data Model is D2. No database, no tables.
+Two tables. Answers are held as a single JSON field rather than 27 columns, because the questionnaire is revised annually and a column-per-question schema would require a migration every year.
 
-All state, the guided form's answers, the parsed values from an uploaded file, and the data shown on the review and confirmation screens, lives in React component state for the duration of the browser session only. None of it is written to storage of any kind.
+### Table: `suppliers`
+
+One row per supplier who engages with the portal. **A row is created only when a supplier submits or registers** — there is no pre-seeded supplier list and no "not started" state.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid, PK | auto-generated |
+| `company_name` | text, not null | |
+| `country` | text, not null | Registered country |
+| `contact_name` | text, not null | |
+| `contact_email` | text, not null | **Personal data — see Section 7** |
+| `route` | text, not null | `ecovadis` or `questionnaire` |
+| `status` | text, not null | `declared` (EcoVadis route — registered and redirected) or `submitted` (questionnaire route — questionnaire completed) |
+| `ecovadis_scorecard_url` | text, nullable | Required when `route = ecovadis`; null otherwise |
+| `consent_given` | boolean, not null | Must be true — a row cannot exist without consent |
+| `consent_at` | timestamptz, not null | When consent was given |
+| `consent_version` | text, not null | Which consent text the supplier agreed to (e.g. `2026-v1`) — so a future wording change stays auditable |
+| `created_at` | timestamptz, default now() | |
+
+### Table: `submissions`
+
+One row per completed questionnaire. EcoVadis-route suppliers have **no** submission row.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid, PK | auto-generated |
+| `supplier_id` | uuid, FK → `suppliers.id`, not null | |
+| `submitted_at` | timestamptz, default now() | |
+| `door` | text, not null | `guided_form` or `upload` |
+| `answers` | jsonb, not null | All 27 answers, keyed by question ID (e.g. `{"S2_Q1": "...", "S2_Q2": "..."}`). Question IDs come from the same field mapping already derived from `The_Corporate_Supplier_Questionnaire_2026.xlsx` and used by both doors — one source of truth, so Door 1 and Door 2 produce identical JSON shapes. |
+| `created_at` | timestamptz, default now() | |
+
+**Index:** `submissions.supplier_id`.
+
+**Write pattern:** the questionnaire route creates the `suppliers` row and its `submissions` row together on submit; if either insert fails, neither is kept (no orphan supplier rows). The EcoVadis route creates a `suppliers` row only.
+
+**Duplicates:** a supplier who submits twice creates two rows. This is accepted for v3.0 — deduplication is done by eye in the dashboard on `contact_email`. Enforcing uniqueness is deferred (Section 12); the risk of a hard unique constraint is that a genuine re-submission (a corrected file) would fail silently for the supplier.
 
 ---
 
 ## Section 6 — Access and Permissions
 
-N/A. Access Model is A1. No authentication, no roles, no RLS.
+**Access model: A1 (public), enforced write-only at the database.**
+
+Row Level Security is **enabled on both tables**, and the anon key is granted exactly one capability:
+
+| Table | anon INSERT | anon SELECT | anon UPDATE | anon DELETE |
+|-------|-------------|-------------|-------------|-------------|
+| `suppliers` | **Allowed** | **Denied** | Denied | Denied |
+| `submissions` | **Allowed** | **Denied** | Denied | Denied |
+
+- **INSERT policy:** permitted for the `anon` role on both tables — this is what lets a public supplier submit.
+- **No SELECT policy exists for `anon` on either table.** Under RLS, absence of a policy means denial. Even if someone extracts the anon key from the deployed JavaScript (they can — it is public by design), they cannot read a single row.
+- **Reading** is done exclusively by Rebecca in the **Supabase dashboard**, authenticated by Supabase. No read path exists in the application.
+
+> **Hard rule for the build:** the app must never call `.select()` on `suppliers` or `submissions`. Adding any read to the client would expose every supplier's commercial data to anyone with the URL. If a future version needs an in-app review screen, it requires authentication (A2) and must go back to the Tool Architect.
 
 ---
 
 ## Section 7 — GDPR
 
-**GDPR outcome:** Not applicable, confirmed during the interview.
+**GDPR outcome: APPLICABLE.** This reverses v2.0, where it was "Not applicable" solely because nothing was stored.
 
-**Reasoning:** Section 1 of the questionnaire, in both doors, asks for fields that would count as personal data if they were stored or transmitted (company name, contact name, contact email). None of it is. It is never sent to a server, never written to a database, and never emailed. It exists only in the browser's memory for the length of that one session and is discarded the instant the tab closes or is refreshed. Because no processing or storage of personal data occurs outside the individual supplier's own device, this version does not trigger GDPR obligations.
+**Personal data collected:** contact name and contact email (business contact details of a named individual). Company name and country are corporate data, but they are stored alongside and linked to the individual, so the record as a whole is in scope.
 
-> This outcome is specific to this version. The moment persistence (D3) or a login (A2/A3) is added, this section must be reopened and the full consent framework evaluated. See Section 12.
+| Requirement | How v3.0 meets it |
+|-------------|-------------------|
+| **Lawful basis** | **Consent** — freely given, explicit, and recorded. |
+| **Consent mechanism** | A **required, un-ticked-by-default checkbox** shown at the point of submission: on the final step of the Guided Form (Door 1), on the Upload Review screen before Submit (Door 2), and on the EcoVadis registration screen before redirect. Submit / Continue is **blocked** until it is ticked. Pre-ticked boxes and implied consent are not permitted. |
+| **Consent record** | `consent_given`, `consent_at`, and `consent_version` are written to the `suppliers` row. A row cannot exist without consent — this is the audit trail. |
+| **Transparency** | The consent text states plainly: what is collected, why (supplier sustainability assessment for The Corporate), where it is stored (Supabase, US region), how long it is kept (24 months), and how to have it deleted. |
+| **Retention** | **24 months** from submission. Covers the current assessment cycle and the next, allowing year-on-year comparison, after which the record is deleted. |
+| **Retention enforcement** | **Manual for v3.0.** There is no scheduled-automation arm, so nothing auto-deletes. Rebecca deletes expired records in the Supabase dashboard. This is a known limitation, recorded in Section 15 and in the build's Known Issues — an automated retention job is a candidate for v4.0. |
+| **Right to erasure / access** | A supplier emails **rebecca@lcaresource.com** to request access to or deletion of their data. This address must appear in the consent text and on the Confirmation screen. Deletion is performed manually in the Supabase dashboard. |
+| **Data minimisation** | Only the four identity fields plus the questionnaire answers are collected. No IP address, analytics, cookies, or tracking. |
+
+**Consent text (starting wording — refine at build):**
+
+> By submitting, you consent to The Corporate storing your company details, your name and email address, and your questionnaire answers for the purpose of assessing supplier sustainability performance. Your data is stored securely and kept for 24 months, after which it is deleted. To access or delete your data, email rebecca@lcaresource.com.
 
 ---
 
 ## Section 8 — Screen and UI Structure
 
-### Landing Page (unchanged)
+### Landing Page (unchanged from v2.0)
 
-- **Purpose:** Route Tier 1 suppliers to the correct submission path and communicate The Corporate's sustainability expectations.
-- **What is visible:** Nav bar, hero section, "Why We Are Asking," the two-route section (EcoVadis card and Questionnaire card), timeline, key resources, footer. Content and brand treatment unchanged from v1.0.
-- **User actions:** Click "Submit EcoVadis Scorecard" (opens ecovadis.com in a new tab, unchanged). Click the questionnaire route's button, relabelled "Complete Questionnaire" (previously "Download Assessment").
-- **What happens next:** The EcoVadis button behaves exactly as before. The questionnaire button now opens the Door Choice view instead of immediately downloading a file.
+- Nav, hero, "Why We Are Asking," the two-route section, timeline, key resources, footer.
+- **Changed behaviour:** the EcoVadis button **no longer opens ecovadis.com directly.** It now opens the new EcoVadis Registration screen. The questionnaire button continues to open Door Choice.
 
-### Door Choice (new)
+### EcoVadis Registration (NEW in v3.0)
 
-- **Purpose:** Let the supplier pick how they want to complete the questionnaire.
-- **What is visible:** Two option cards side by side. Door one: "Fill in the tool," with a short description of the guided form. Door two: "Download and complete offline," with a short description of downloading, completing with colleagues, and uploading the result. A way back to the landing page.
-- **User actions:** Choose Door 1 or Door 2.
-- **What happens next:** Door 1 opens the Guided Form at Section 1. Door 2 opens the Download & Upload view.
+- **Purpose:** Capture who is taking the EcoVadis route before sending them to EcoVadis — without this, EcoVadis suppliers would be invisible to The Corporate.
+- **What is visible:** Short form — company name, country, contact name, contact email, EcoVadis scorecard link. The GDPR consent checkbox (unticked). A "Continue to EcoVadis" button. A way back to the landing page.
+- **User actions:** Fill in the five fields, tick consent, continue.
+- **What happens next:** Required-field validation and the consent tick are both enforced; Continue is blocked until they pass. On success, a `suppliers` row is written with `route = ecovadis`, `status = declared`, and the scorecard URL — then **ecovadis.com opens in a new tab** and the supplier sees a short confirmation in the portal tab. If the insert fails, the supplier sees a clear error and is not redirected (see Section 9).
 
-### Guided Form (Door 1)
+### Door Choice (unchanged from v2.0)
 
-- **Purpose:** Let the supplier answer the questionnaire section by section, mirroring the structure of the Excel workbook.
-- **What is visible:** A progress indicator (for example "Section 3 of 7"), the current section's title, and its fields. The exact fields per section are not enumerated in this spec; Claude Code derives them directly from the existing Excel asset at build time and confirms the mapping with the builder (see Section 15). Back and Next controls, and a Submit control on the final section. Inline validation messages on required fields.
-- **User actions:** Fill in fields for the current section. Move back and forth between any of the 7 sections freely before submitting. Submit once all required fields across every section are valid.
-- **What happens next:** Attempting to advance past a section, or to submit, with a required field empty blocks the action immediately with an inline error; nothing further happens until it's resolved. A valid submit moves to the Confirmation Screen.
+### Guided Form — Door 1 (changed)
 
-### Download & Upload (Door 2)
+- Unchanged: 7 sections, free back-and-forth navigation, inline required-field validation, field definitions derived from the Excel workbook.
+- **New:** the final section carries the **GDPR consent checkbox**, unticked by default. Submit is blocked until every required field across all 7 sections is valid **and** consent is ticked.
+- **What happens next:** on submit, the tool writes a `suppliers` row (`route = questionnaire`, `status = submitted`) and a `submissions` row (`door = guided_form`, answers as JSON), then moves to Confirmation. A failed write does not advance (Section 9).
 
-- **Purpose:** Let the supplier download the blank template, complete it offline (individually or with colleagues), and upload the result.
-- **What is visible:** A "Download Template" button (the unchanged Excel asset). An upload control accepting .xlsx or the workbook's .csv export. Brief instructions.
-- **User actions:** Download the template. Upload a completed file.
-- **What happens next:** On upload, the tool attempts to read the file's structure. If it doesn't match the expected template (wrong file, missing sheets, unexpected layout), a clear error message asks the supplier to re-upload the correct file; nothing is guessed or partially mapped. On a successful read, the supplier moves to the Upload Review screen.
+### Download & Upload — Door 2 (unchanged from v2.0)
 
-### Upload Review (Door 2)
+Template download, .xlsx/.csv upload, client-side parse, hard failure on structural mismatch.
 
-- **Purpose:** Let the supplier confirm the tool read their file correctly before submitting.
-- **What is visible:** A read-only summary of the parsed answers, grouped by section, S1 through S7.
-- **User actions:** "Submit" to confirm and proceed, or "Re-upload a different file" to return to the upload step. There is no inline editing here; a wrong value is fixed in the source file and re-uploaded.
-- **What happens next:** A valid submit moves to the Confirmation Screen.
+### Upload Review — Door 2 (changed)
 
-### Confirmation Screen (shared by both doors)
+- Unchanged: read-only parsed answers grouped S1–S7, no inline editing, missing required answers block Submit until a corrected file is uploaded.
+- **New:** the **GDPR consent checkbox** appears here, unticked, and Submit is blocked until it is ticked.
+- **What happens next:** on submit, the tool writes a `suppliers` row (`route = questionnaire`, `status = submitted`) and a `submissions` row (`door = upload`, answers as JSON), then moves to Confirmation.
 
-- **Purpose:** Confirm the submission was received for this session, and give the supplier a way to keep a record of it.
-- **What is visible:** A summary of what was submitted (which door was used, sections completed), and a "Download PDF" button.
-- **User actions:** Click "Download PDF" to generate and download the branded summary described in Section 3.
-- **What happens next:** Nothing further. The supplier may close the tab; nothing is retained by the tool once they do.
+### Confirmation Screen (changed)
+
+- Unchanged: shows which door was used, a summary of what was submitted, and a "Download PDF" button.
+- **New:** states plainly that the submission **has been recorded by The Corporate** (v2.0 could not say this — nothing was stored). Shows the retention period and the deletion contact (rebecca@lcaresource.com).
+- **The PDF remains the supplier's own record** — no confirmation email is sent.
 
 ---
 
 ## Section 9 — Logic and Calculations
 
-**Door 1, sequential form logic:** The 7 sections are held in component state for the session only. Field definitions per section are derived at build time by Claude Code reading the existing Excel asset's structure (sheet names, cell labels, answer types) and are confirmed with the builder before the form is finalised. The supplier can move back and forth between any visited section. Required-field validation blocks advancing to the next section and blocks final submission until every required field across all 7 sections is filled; errors are shown inline at the field level.
+**Door 1 / Door 2 logic:** unchanged from v2.0 — sequential form with validation; client-side parse with hard failure on structural mismatch; a single shared field mapping derived from the Excel workbook is the source of truth for both doors.
 
-**Door 2, upload parsing logic:** On upload, the tool reads the .xlsx file with a client-side spreadsheet-parsing library, or the .csv export with a client-side CSV-parsing library, and maps cells or columns to the same field structure used in Door 1 (the same source of truth: the existing Excel template). If the structure doesn't match what's expected, the read fails outright and the supplier is asked to re-upload the correct file. There is no partial or best-effort mapping. On a successful read, the parsed values populate the read-only Upload Review screen exactly as extracted.
+**Answer serialisation (new):** both doors produce the **same JSON shape** for `submissions.answers`, keyed by question ID from the shared field mapping. Door 1 and Door 2 must never produce differently-shaped JSON — this is what makes the stored data comparable and, later, machine-scoreable.
 
-**PDF generation logic:** Triggered by "Download PDF" on the Confirmation Screen. Generates a client-side PDF, using a JS PDF-generation library, listing the supplier's answers section by section (S1 to S7), styled per the-corporate-brand skill, and including which door was used and the date. Nothing leaves the browser to produce this file.
+**Database write logic (new):**
+- **Questionnaire route:** on a valid, consented submit — insert the `suppliers` row, then the `submissions` row referencing it. If the submission insert fails, the supplier row must not be left orphaned; the write is treated as one unit.
+- **EcoVadis route:** on a valid, consented continue — insert the `suppliers` row only, then redirect.
+- **Writes only.** The client never issues a read against either table.
+
+**Consent logic (new):** the consent checkbox is unticked by default and cannot be bypassed. It is validated at the same moment as required fields. `consent_given`, `consent_at` (timestamp of the tick), and `consent_version` are written with the supplier row. **No row may be inserted with `consent_given = false`.**
+
+**PDF generation:** unchanged from v2.0 — client-side, branded, section-by-section.
 
 **Edge cases:**
-- The supplier closes the tab partway through either door: nothing is saved. They start over on their next visit. This is expected for this version.
-- An uploaded file parses successfully but is missing answers to required questions: by default, this spec treats that the same way Door 1 treats a missing required field. The Upload Review screen flags what's missing and blocks Submit until a corrected file is uploaded. This default is called out explicitly in Section 15 since it wasn't stated outright in the interview and should be confirmed before or during the build.
+- **The database write fails** (network drop, Supabase unreachable): the supplier must see a **clear error stating their submission was not recorded**, with the option to retry. They must never see a Confirmation screen for a submission that wasn't stored. This is the most important new failure mode — a false confirmation means The Corporate believes it has a response it does not have. On the EcoVadis route, a failed write must **block the redirect**, otherwise the supplier leaves and is never recorded.
+- **A supplier submits twice:** two supplier rows are created. Accepted for v3.0 (Section 5).
+- **A supplier abandons partway:** nothing is written — rows are created only at submit / continue. Partial completions do not exist in the database.
+- **The supplier closes the tab after a successful write:** the record persists. This is the point of v3.0.
 
 ---
 
 ## Section 10 — Brand and Visual Direction
 
-**Brand reference:** the-corporate-brand skill file. Already present at the repo root from the v1.0 build; Claude Code confirms it is still installed to .claude/skills/ in First Session Setup.
+Unchanged from v2.0. Governed by `the-corporate-brand.skill` (already installed at `.claude/skills/the-corporate-brand/`). The new EcoVadis Registration screen and the consent checkboxes must follow it: Chalk `#F2F2F2` background, Ink `#000000` text and CTAs, Playfair Display headlines, DM Sans body, square corners, no shadows, Acid Lime `#C8F135` only against black and sparingly.
 
-**Visual feel:** Corporate minimalism, unchanged from v1.0. Restraint over decoration. Precise, direct, composed, authoritative. No gradients, no shadows, no rounded corners.
-
-**Key brand rules Claude Code must enforce, including on the new views and the PDF:**
-- Fonts: Playfair Display (headlines), DM Sans 300 (body), DM Sans 500 (labels and emphasis)
-- Colours: Ink (#000000), Stone (#B6B09F), Linen (#EAE4D5), Chalk (#F2F2F2), White (#FFFFFF), Acid Lime (#C8F135)
-- Acid Lime: used sparingly, always against #000000, never directly on light backgrounds
-- Buttons and cards: square corners, no shadows
-- No blue links: underline plus Ink colour only
-- Copy follows The Corporate voice rules: short declarative sentences, active voice, no exclamation points, no emoji
+The consent text must read in the brand voice — precise, direct, composed. Plain-language, not legalese.
 
 ---
 
 ## Section 11 — API and Credentials
 
-This tool requires no external services and no API keys, unchanged from v1.0.
-
 | Service | What it does in this tool | Key required | Where key is stored |
 |---------|--------------------------|-------------|-------------------|
-| None | — | — | — |
+| Supabase | Stores supplier and submission records | Project URL + **publishable (anon) key** | Netlify environment variables, exposed to the client at build time as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` |
 
-**Client-side libraries (not credentials, no keys involved):** a spreadsheet-parsing library for reading .xlsx uploads, a CSV-parsing library for .csv uploads, and a PDF-generation library for the branded confirmation summary. All bundled at build time and run entirely in the browser. No server, no environment variables, no account setup required.
+**On the anon key being public:** it ships inside the deployed JavaScript and anyone can extract it. This is expected and safe **only because RLS grants it INSERT and nothing else** (Section 6). The security of this tool rests entirely on the RLS policies, not on hiding the key.
 
-**Credentials readiness:** Nothing to prepare before the build session.
+**The service-role key must never appear in this project** — not in the code, not in Netlify env vars, not in the repo. It bypasses RLS.
+
+**Credentials readiness:** the builder must add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to **Netlify** (Site configuration → Environment variables). Both values come from the Supabase dashboard (Project Settings → API). A rebuild is required after adding them. **No other deploy target needs configuring** — GitHub Pages is retired.
 
 ---
 
@@ -263,68 +307,70 @@ This tool requires no external services and no API keys, unchanged from v1.0.
 
 | Deferred feature | Reason it is deferred |
 |-----------------|----------------------|
-| Persisted storage of submissions (a database, Tier 2/3) so The Corporate's team can retrieve what suppliers send | This version validates the submission UX first; adding a database is the next iteration once the flow is proven |
-| Supplier login or verification, to confirm only invited/correct suppliers can submit rather than anyone with the link | Requires an access-model change (A2/A3) and a database; deferred until persistence is added |
-| Internal review dashboard for procurement/EHS (carried over from v1.0) | Depends on the database above; not needed to validate the supplier-facing flow |
-| Submission tracker, percentage of Tier 1 suppliers who have responded (carried over from v1.0) | Depends on the database above |
-| Automated EcoVadis scorecard validation (carried over from v1.0) | Requires EcoVadis API access, pending availability |
+| **Connecting the Supplier Sustainability Scorecard to this database** (Scorecard reads submissions instead of reviewers re-keying them) | The obvious next step, and the reason the answer JSON is shaped consistently. It makes the two tools a **Stack** and changes the Scorecard's spec too. Deliberately deferred until v3.0 is proven in production. |
+| In-app review screen for The Corporate | Would require authentication (A2) and a read path — a fundamentally different security model. Reading happens in the Supabase dashboard for now. |
+| Automated retention deletion at 24 months | Needs a scheduled-automation arm. Manual deletion in the dashboard for v3.0. |
+| Deduplication / unique constraint on supplier email | Risks silently blocking a legitimate re-submission. Handled by eye in the dashboard for now. |
+| Confirmation email to the supplier | Would require an email arm. The downloadable PDF is the supplier's record. |
+| Storing the uploaded file itself | Only the parsed answers are stored; the file is not retained. |
+| Supplier login / verification | Any A2/A3 change is out of scope. |
 
 ---
 
 ## Section 13 — Acceptance Criteria
 
+> Criteria 13 and 14 of the v2.0 spec ("no data leaves the browser," "nothing persists across sessions") are **deleted** — v3.0 inverts both.
+
 | # | What to verify | Expected result | Done? |
 |---|---------------|-----------------|-------|
-| 1 | Landing page renders unchanged | All v1.0 sections render as before; EcoVadis button opens ecovadis.com in a new tab | [ ] |
-| 2 | Questionnaire button opens Door Choice | Clicking "Complete Questionnaire" opens the Door Choice view instead of triggering a download | [ ] |
-| 3 | Door Choice presents both doors clearly | Both cards are visible, described, and navigable; a way back to the landing page exists | [ ] |
-| 4 | Guided form (Door 1) matches the source Excel structure | All 7 sections render with fields matching the workbook, confirmed with the builder during build | [ ] |
-| 5 | Guided form navigation and validation | Supplier can move back and forth between visited sections; required fields block advancing or submitting until filled, shown inline | [ ] |
-| 6 | Guided form submit reaches Confirmation | Submitting Section 7 with all required fields valid moves to the Confirmation Screen | [ ] |
-| 7 | Download Template (Door 2) unchanged | Clicking downloads the unmodified The_Corporate_Supplier_Questionnaire_2026.xlsx | [ ] |
-| 8 | Upload accepts and validates files | .xlsx and .csv are accepted; a structurally mismatched file produces a clear error and no partial data | [ ] |
-| 9 | Upload Review is accurate and read-only | Parsed values match the uploaded file exactly; no inline editing is possible; "re-upload" returns to the upload step | [ ] |
-| 10 | Missing required fields in an uploaded file are flagged | Submit is blocked on the Upload Review screen until a corrected file is uploaded, per the Section 9 default | [ ] |
-| 11 | Confirmation Screen displays correctly for both doors | Shows which door was used and a summary of what was submitted | [ ] |
-| 12 | PDF export matches brand and content | "Download PDF" produces a branded, section-by-section (S1 to S7) listing of the submitted answers | [ ] |
-| 13 | No data leaves the browser | No network request stores or emails submission data; verifiable in the browser's network tab during QA | [ ] |
-| 14 | Nothing persists across sessions | Refreshing or closing the tab at any point clears all entered or uploaded data | [ ] |
-| 15 | Tool deploys and is responsive | Live Netlify URL loads correctly on desktop and mobile for every view, including the new ones | [ ] |
+| 1 | Landing page renders unchanged | All sections render as before | [ ] |
+| 2 | EcoVadis button opens the new Registration screen | It no longer goes straight to ecovadis.com | [ ] |
+| 3 | EcoVadis Registration validates and writes | Required fields + consent enforced; on success a `suppliers` row exists with `route = ecovadis`, `status = declared`, scorecard URL, and consent fields; ecovadis.com then opens in a new tab | [ ] |
+| 4 | EcoVadis write failure blocks the redirect | If the insert fails, a clear error shows and the supplier is **not** redirected | [ ] |
+| 5 | Door Choice, Guided Form navigation and validation | Unchanged from v2.0 — 7 sections, free navigation, inline required-field errors | [ ] |
+| 6 | Consent checkbox present, unticked, and blocking | Appears on the Guided Form's final step, the Upload Review screen, and EcoVadis Registration; unticked by default; Submit/Continue blocked until ticked | [ ] |
+| 7 | Guided Form submit writes both rows | A `suppliers` row (`route = questionnaire`, `status = submitted`) and a `submissions` row (`door = guided_form`) with all 27 answers in `answers` | [ ] |
+| 8 | Download Template unchanged | Downloads the unmodified `The_Corporate_Supplier_Questionnaire_2026.xlsx` | [ ] |
+| 9 | Upload accepts, validates, and reviews | .xlsx/.csv accepted; structural mismatch hard-fails; Upload Review read-only and accurate; missing required answers block Submit | [ ] |
+| 10 | Upload submit writes both rows | Same as #7 but `door = upload` | [ ] |
+| 11 | **Both doors produce identical answer JSON** | Submitting the same answers through Door 1 and Door 2 yields the same `answers` JSON shape and keys | [ ] |
+| 12 | Consent fields are stored | `consent_given = true`, `consent_at`, and `consent_version` populated on every supplier row; **no row exists with `consent_given = false`** | [ ] |
+| 13 | **RLS blocks all reads** | Using the anon key, a `select` against `suppliers` and `submissions` returns **zero rows / permission denied**. Verify directly — this is the security invariant of the whole tool | [ ] |
+| 14 | **The client never reads** | Grep `src/` — no `.select()` call against `suppliers` or `submissions` anywhere in the app | [ ] |
+| 15 | Failed write never shows a false Confirmation | Simulate a failed insert: the supplier sees a clear "not recorded" error and a retry, never the Confirmation screen | [ ] |
+| 16 | Confirmation Screen updated | States the submission was recorded, shows the 24-month retention period and rebecca@lcaresource.com | [ ] |
+| 17 | PDF export still works for both doors | Branded, section-by-section S1–S7 listing of submitted answers | [ ] |
+| 18 | Records are visible in the dashboard | After a test submission on each route, the rows are present and correct in the Supabase dashboard | [ ] |
+| 19 | Deploys and is responsive | Netlify live URL works on desktop and mobile across every screen including the new one. The GitHub Pages workflow is removed from the repo and the Pages URL no longer serves the app | [ ] |
+| 20 | Service-role key absent | The service-role key appears nowhere in the repo, the code, or the env vars | [ ] |
 
 ---
 
 ## Section 14 — Build Path
 
-**This tool's tier:** Tier 1
+**This tool's tier:** Tier 2
 
----
+### Pre-build steps
 
-### Pre-build steps — complete these before opening Claude Code
+- [x] Tool Architect — interview complete, this spec written and confirmed
+- [ ] Project Governor — CLAUDE.md updated to v3.0 (the v2.0 "no data leaves the browser" hard rule must be **removed**) and PROGRESS.md re-seeded
+- [x] Supabase project created and verified — `hqqngissvcbevktcizit`, ACTIVE_HEALTHY, empty
+- [ ] `product-spec.md` v3.0, updated `CLAUDE.md`, and updated `PROGRESS.md` pushed to the repo
+- [ ] `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` added to Netlify environment variables
+- [ ] No `supabase-setup.md` needed — the project is empty; Claude Code creates the schema via MCP and produces that file itself
 
-- [ ] Tool Architect skill, interview complete, this spec written and confirmed
-- [ ] Project Governor skill, CLAUDE.md and PROGRESS.md produced from this spec
-- [ ] Existing GitHub repo from the v1.0 build confirmed and ready (see Section 15)
-- [ ] product-spec.md (this file) uploaded to the repo root, replacing the v1.0 version
-- [ ] CLAUDE.md uploaded to the repo root, replacing the v1.0 version
-- [ ] PROGRESS.md uploaded to the repo root
-- [ ] the-corporate-brand skill file confirmed still present at the repo root
-- [ ] The_Corporate_Supplier_Questionnaire_2026.xlsx confirmed still present in /assets/, unchanged
-- [ ] Netlify connection to the repo confirmed still active (Netlify MCP not active, so deploys stay manual)
-- [ ] No credentials to prepare for this tool
+### Tier 2 — build sessions
 
----
-
-### Tier 1 — build session
-
-- [ ] Open Claude Code in the project folder (existing GitHub repo connected to Netlify)
-- [ ] Claude Code runs First Session Setup: confirms docs/, reference files, and the-corporate-brand skill are correctly installed
-- [ ] Claude Code reads product-spec.md, CLAUDE.md, and PROGRESS.md
-- [ ] Claude Code reads The_Corporate_Supplier_Questionnaire_2026.xlsx to derive the S1 to S7 field structure, and confirms the mapping with the builder before finalising the guided form
-- [ ] Claude Code migrates the frontend from HTML/CSS/JS to React + Vite + Tailwind, preserving the unchanged Landing Page content and all brand rules
-- [ ] Claude Code builds the new views: Door Choice, Guided Form (Door 1), Download & Upload plus Review (Door 2), Confirmation Screen
-- [ ] Claude Code implements client-side .xlsx/.csv parsing and client-side PDF generation
-- [ ] Test locally before deploying
-- [ ] Push to main, Netlify deploys automatically
+- [ ] Claude Code reads `product-spec.md`, `CLAUDE.md`, `PROGRESS.md`
+- [ ] Claude Code creates both tables, the RLS policies, and the index via the Supabase MCP; writes `supabase-setup.md`
+- [ ] **Verify RLS before writing any UI** — confirm the anon key can insert and cannot select
+- [ ] Build the EcoVadis Registration screen
+- [ ] Add the consent checkbox to all three submission points
+- [ ] Wire the database writes for both doors and the EcoVadis route, including failure handling
+- [ ] Update the Confirmation screen
+- [ ] Test both routes end to end; verify rows land correctly in the dashboard
+- [ ] Acceptance-criteria pass (20 criteria)
+- [ ] Push to `main` → Netlify auto-deploys
 
 ---
 
@@ -332,11 +378,10 @@ This tool requires no external services and no API keys, unchanged from v1.0.
 
 | Question | Who answers it | Blocking? |
 |----------|---------------|-----------|
-| Confirm the existing GitHub repo from the v1.0 build (supplier_onboarding.html) is the one this iteration continues in | Builder | Yes, needed before the build session starts |
-| If an uploaded file parses successfully but required answers are missing, this spec defaults to blocking Submit until a corrected file is uploaded, the same way Door 1 blocks on a missing required field. Confirm or override | Builder | No, Claude Code can build the stated default; override any time |
-| Exact button label and copy for the questionnaire route on the landing page (this spec assumes "Complete Questionnaire") | Builder | No, easy to change after build |
-| Exact field list per section, S1 to S7, is not enumerated in this spec | Claude Code, derived from the existing Excel asset, confirmed with builder | No, resolves during build |
-| Choice of client-side libraries for .xlsx parsing, .csv parsing, and PDF generation | Claude Code | No, standard libraries, no licensing concerns expected |
+| Final wording of the consent text (starting wording in Section 7). | Builder | No — default provided |
+| Retention deletion is **manual** for v3.0 — nothing auto-deletes at 24 months. Rebecca must diarise this. Automate in v4.0? | Builder | No — but it is a live GDPR obligation, not a nicety |
+| The EcoVadis link is still the generic homepage (`https://www.ecovadis.com/`) rather than a targeted redirect. Carried over from v2.0, still settled as acceptable. | Builder | No |
+| ~~GitHub Pages backup deploy~~ — **RESOLVED 14 July 2026.** The builder disabled GitHub Pages. Netlify is now the only deploy target; Claude Code removes the Pages workflow and the `VITE_BASE` subpath handling. | Builder | Resolved |
 
 ---
 
@@ -344,8 +389,9 @@ This tool requires no external services and no API keys, unchanged from v1.0.
 
 | Version | Date | What changed in the tool |
 |---------|------|--------------------------|
-| v1.0 | 12 June 2026 | Retroactive spec of the existing supplier onboarding landing page (supplier_onboarding.html). Spec created to establish Project Governor and Claude Code session compatibility. |
-| v2.0 | 5 July 2026 | Added two in-tool submission doors to the questionnaire route: a guided section-by-section form (Door 1) and a download-complete-upload flow with a read-only review step (Door 2). Added a branded PDF export of submitted answers. Migrated the frontend from HTML/CSS/JS to React + Vite + Tailwind. Data model moved from D1 (hardcoded) to D2 (session only) since the tool now accepts supplier input; access model remains A1. No database, login, or email in this version, explicitly deferred. |
+| v1.0 | — | Static single-page site: EcoVadis external link + Excel download, returned by email outside the tool. |
+| v2.0 | 8 July 2026 | React + Vite + Tailwind rebuild. Two in-tool submission doors (guided form, download-and-upload), Door Choice screen, branded PDF export. Nothing stored — session-only, explicitly an experiment to validate the submission flow. |
+| v3.0 | 14 July 2026 | **Database added (Supabase, Tier 2).** Supplier and submission records persisted. New EcoVadis Registration screen so the EcoVadis route is captured. GDPR consent required at all three submission points, with consent recorded. Portal is **write-only** — RLS grants insert and denies all reads; responses are read in the Supabase dashboard. v2.0's "no data leaves the browser" invariant is retired. |
 
 ---
 
