@@ -32,7 +32,7 @@ One row per supplier who registers (EcoVadis route) or submits (questionnaire ro
 
 | Column | Type | Constraints |
 |--------|------|-------------|
-| `id` | uuid | PK, default `gen_random_uuid()`. **In practice supplied by the client** (`crypto.randomUUID()`) so the app can link the submission row without reading back. |
+| `id` | uuid | PK, default `gen_random_uuid()`. Never read back by the app — the EcoVadis route lets the DB default it; the questionnaire route links `submissions` inside the RPC. |
 | `company_name` | text | not null |
 | `country` | text | not null |
 | `contact_name` | text | not null |
@@ -74,10 +74,12 @@ Two layers of enforcement:
 1. **RLS policies** — only `INSERT` policies exist (`with check (true)`) for `anon`. No SELECT/UPDATE/DELETE policy exists; under RLS, absence of a policy is denial.
 2. **GRANT layer** — SELECT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER were **revoked from `anon`**; only INSERT remains granted. So even if a policy were ever added by mistake, the privilege is gone.
 
-Because `anon` lacks SELECT, `INSERT ... RETURNING` and supabase-js `.insert().select()` both fail for anon. The app therefore **never reads** and never depends on RETURNING:
+Because `anon` lacks SELECT, supabase-js `.insert().select()` fails for anon. The app therefore **never reads**:
 
-- **EcoVadis route** — a single direct `insert` into `suppliers` (no submission row).
-- **Questionnaire route** — the `submit_questionnaire` RPC (below) writes both rows in one transaction, so there is never an orphan `suppliers` row if the `submissions` insert fails.
+- **EcoVadis route** — a single direct `insert` into `suppliers` with `return=minimal` (no submission row, no id read back).
+- **Questionnaire route** — the `submit_questionnaire` RPC (below) writes both rows in one transaction and links them server-side, so the client needs no id and there is never an orphan `suppliers` row if the `submissions` insert fails.
+
+The questionnaire's Section 1 (company name, country, contact name, contact email) is captured as four **structured on-screen fields** — guided-form Section 1, or the Upload Review screen for Door 2 — and passed to the RPC to populate the `suppliers` identity columns cleanly (matching the EcoVadis route). They are not parsed from the uploaded workbook.
 
 ### Function: `submit_questionnaire(...)`
 

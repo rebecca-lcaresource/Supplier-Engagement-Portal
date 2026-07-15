@@ -1,4 +1,4 @@
-import { FIELDS } from '../data/questionnaireFields.js';
+import { FIELDS, EMAIL_RE } from '../data/questionnaireFields.js';
 
 // Anchor cells that must match the unchanged template exactly. Used to
 // hard-fail on any structural mismatch rather than guess or partially map.
@@ -81,6 +81,9 @@ export async function parseUploadedQuestionnaire(file) {
 
   const answers = {};
   FIELDS.forEach((field) => {
+    // S1 identity fields (company/country/contact) have no sheetRow — they are
+    // collected on the Upload Review screen, not parsed from the workbook.
+    if (field.sheetRow == null) return;
     const rowArray = rows[field.sheetRow - 1]; // sheetRow is 1-indexed Excel row
     const rawValue = rowArray?.[4]; // column E = "SUPPLIER RESPONSE"
     const value = String(rawValue ?? '').trim();
@@ -89,5 +92,18 @@ export async function parseUploadedQuestionnaire(file) {
     }
   });
 
-  return { success: true, answers };
+  // Best-effort pre-fill for the on-screen contact fields, from the workbook's
+  // original free-text S1 cells (row 6 = legal name + country, row 7 = contact
+  // name/title/email). The supplier confirms/edits these on the Review screen.
+  const legalCell = String(rows[5]?.[4] ?? '').trim(); // Excel row 6, col E
+  const contactCell = String(rows[6]?.[4] ?? '').trim(); // Excel row 7, col E
+  const emailMatch = contactCell.match(EMAIL_RE) || contactCell.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+  const contactHints = {
+    company_name: legalCell,
+    country: '',
+    contact_name: contactCell,
+    contact_email: emailMatch ? emailMatch[0] : '',
+  };
+
+  return { success: true, answers, contactHints };
 }

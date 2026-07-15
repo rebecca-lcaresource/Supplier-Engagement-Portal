@@ -23,7 +23,7 @@ export default function DownloadUpload({ onBack, onParsed }) {
       return;
     }
 
-    onParsed(result.answers);
+    onParsed(result.answers, result.contactHints);
   }
 
   return (

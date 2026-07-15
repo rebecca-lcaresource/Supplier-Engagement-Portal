@@ -39,7 +39,12 @@ export default function GuidedForm({ onSubmitted, onBack }) {
     const newErrors = {};
     fieldList.forEach((f) => {
       if (!isFieldValid(f, answers[f.id])) {
-        newErrors[f.id] = f.type === 'checkbox' ? 'Please confirm before continuing.' : 'This field is required.';
+        if (f.type === 'checkbox') newErrors[f.id] = 'Please confirm before continuing.';
+        else if (f.type === 'email') {
+          newErrors[f.id] = (answers[f.id] || '').trim()
+            ? 'Enter a valid email address.'
+            : 'This field is required.';
+        } else newErrors[f.id] = 'This field is required.';
       }
     });
     return newErrors;

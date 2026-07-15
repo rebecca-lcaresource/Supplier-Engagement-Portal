@@ -7,10 +7,19 @@ import {
   SECTIONS,
   fieldsForSection,
   DECLARATION_FIELDS,
+  IDENTITY_FIELDS,
   isFieldValid,
 } from '../data/questionnaireFields.js';
 
-export default function UploadReview({ parsedAnswers, onReupload, onSubmitted }) {
+export default function UploadReview({ parsedAnswers, contactHints, onReupload, onSubmitted }) {
+  // S1 contact fields are collected here (not in the workbook), pre-filled from
+  // the file's original free-text S1 cells where we could read them.
+  const [contact, setContact] = useState(() => ({
+    company_name: contactHints?.company_name || '',
+    country: contactHints?.country || '',
+    contact_name: contactHints?.contact_name || '',
+    contact_email: contactHints?.contact_email || '',
+  }));
   const [declaration, setDeclaration] = useState({});
   const [errors, setErrors] = useState({});
   const [showMissingBanner, setShowMissingBanner] = useState(false);
@@ -19,18 +28,34 @@ export default function UploadReview({ parsedAnswers, onReupload, onSubmitted })
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const missingFieldIds = SECTIONS.flatMap((s) => fieldsForSection(s.id))
+  // Only the parsed (S2–S7) fields can be "missing from the file". S1 identity is
+  // typed on this screen, so it is validated separately, not treated as a file gap.
+  const parsedFields = SECTIONS.flatMap((s) => fieldsForSection(s.id)).filter(
+    (f) => f.sheetRow != null
+  );
+  const missingFieldIds = parsedFields
     .filter((f) => !isFieldValid(f, parsedAnswers[f.id]))
     .map((f) => f.id);
 
-  function handleDeclarationChange(fieldId, value) {
-    setDeclaration((prev) => ({ ...prev, [fieldId]: value }));
+  const parsedSections = SECTIONS.filter((s) => fieldsForSection(s.id).some((f) => f.sheetRow != null));
+
+  function clearError(fieldId) {
     setErrors((prev) => {
       if (!prev[fieldId]) return prev;
       const next = { ...prev };
       delete next[fieldId];
       return next;
     });
+  }
+
+  function handleContactChange(fieldId, value) {
+    setContact((prev) => ({ ...prev, [fieldId]: value }));
+    clearError(fieldId);
+  }
+
+  function handleDeclarationChange(fieldId, value) {
+    setDeclaration((prev) => ({ ...prev, [fieldId]: value }));
+    clearError(fieldId);
   }
 
   async function handleSubmit() {
@@ -41,6 +66,12 @@ export default function UploadReview({ parsedAnswers, onReupload, onSubmitted })
     }
 
     const newErrors = {};
+    IDENTITY_FIELDS.forEach((f) => {
+      if (!isFieldValid(f, contact[f.id])) {
+        newErrors[f.id] =
+          f.type === 'email' ? 'Enter a valid email address.' : 'This field is required.';
+      }
+    });
     DECLARATION_FIELDS.forEach((f) => {
       if (!isFieldValid(f, declaration[f.id])) {
         newErrors[f.id] = f.type === 'checkbox' ? 'Please confirm before continuing.' : 'This field is required.';
@@ -55,7 +86,7 @@ export default function UploadReview({ parsedAnswers, onReupload, onSubmitted })
     if (missingConsent) return;
 
     // Write BEFORE Confirmation. A failed write never advances — supplier retries.
-    const answers = { ...parsedAnswers, ...declaration };
+    const answers = { ...parsedAnswers, ...contact, ...declaration };
     setSubmitting(true);
     try {
       await writeQuestionnaireSubmission({ answers, door: 'upload' });
@@ -86,8 +117,9 @@ export default function UploadReview({ parsedAnswers, onReupload, onSubmitted })
             Confirm what we read from your file
           </h1>
           <p className="mb-xl">
-            This is a read-only summary. If anything looks wrong, fix it in your file and
-            re-upload — values can't be edited here.
+            Your answers below are read-only — if anything looks wrong, fix it in your file and
+            re-upload. Please add your contact details, which we collect here rather than from the
+            file.
           </p>
 
           {showMissingBanner && missingFieldIds.length > 0 && (
@@ -100,7 +132,25 @@ export default function UploadReview({ parsedAnswers, onReupload, onSubmitted })
             </div>
           )}
 
-          {SECTIONS.map((section) => (
+          {/* S1 — General Information: editable, collected on-screen */}
+          <div className="mb-xl">
+            <p className="font-body text-[13px] font-medium tracking-[0.16em] uppercase text-stone mb-xs">
+              General Information
+            </p>
+            <h2 className="font-display text-xl mb-md">Your contact details</h2>
+            {IDENTITY_FIELDS.map((field) => (
+              <FieldInput
+                key={field.id}
+                field={field}
+                value={contact[field.id]}
+                error={errors[field.id]}
+                onChange={(value) => handleContactChange(field.id, value)}
+              />
+            ))}
+          </div>
+
+          {/* S2–S7 — parsed answers, read-only */}
+          {parsedSections.map((section) => (
             <div key={section.id} className="mb-xl">
               <p className="font-body text-[13px] font-medium tracking-[0.16em] uppercase text-stone mb-xs">
                 {section.esrsHeader}

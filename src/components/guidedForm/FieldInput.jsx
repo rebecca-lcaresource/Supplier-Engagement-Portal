@@ -42,10 +42,10 @@ export default function FieldInput({ field, value, error, onChange }) {
         />
       )}
 
-      {field.type === 'text' && (
+      {(field.type === 'text' || field.type === 'email') && (
         <input
           id={inputId}
-          type="text"
+          type={field.type === 'email' ? 'email' : 'text'}
           className={`tc-input ${error ? 'has-error' : ''}`}
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
