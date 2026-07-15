@@ -13,7 +13,7 @@ const MARGIN = 20;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
 function doorLabel(door) {
-  return door === 'door1' ? 'In-tool guided form' : 'Download & upload';
+  return door === 'guided_form' ? 'In-tool guided form' : 'Download & upload';
 }
 
 function formatDate() {

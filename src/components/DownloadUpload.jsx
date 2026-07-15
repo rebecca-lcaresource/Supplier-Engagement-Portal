@@ -55,7 +55,7 @@ export default function DownloadUpload({ onBack, onParsed }) {
               supports .xlsx.
             </p>
             <a
-              href={`${import.meta.env.BASE_URL}assets/The_Corporate_Supplier_Questionnaire_2026.xlsx`}
+              href="/assets/The_Corporate_Supplier_Questionnaire_2026.xlsx"
               download
               className="tc-btn-primary"
             >

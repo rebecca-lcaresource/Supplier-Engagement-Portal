@@ -3,7 +3,7 @@ import { SECTIONS } from '../data/questionnaireFields.js';
 import { generateSubmissionPdf } from '../lib/generatePdf.js';
 
 export default function Confirmation({ submission }) {
-  const doorLabel = submission.door === 'door1' ? 'In-tool guided form' : 'Download & upload';
+  const doorLabel = submission.door === 'guided_form' ? 'In-tool guided form' : 'Download & upload';
 
   return (
     <div className="min-h-screen">
@@ -32,9 +32,14 @@ export default function Confirmation({ submission }) {
           </div>
 
           <p className="mb-lg">
-            Nothing you entered has been sent or stored anywhere — this browser session is the
-            only place it exists. Download a PDF summary now if you'd like a record, since closing
-            or refreshing this tab clears everything.
+            Your submission has been recorded by The Corporate. You do not need to do anything
+            further, and no confirmation email is sent — download a PDF summary below if you would
+            like your own copy.
+          </p>
+
+          <p className="mb-xl text-sm text-stone">
+            Your data is kept for 24 months, after which it is deleted. To access or delete your
+            data, email <a href="mailto:rebecca@lcaresource.com">rebecca@lcaresource.com</a>.
           </p>
 
           <button

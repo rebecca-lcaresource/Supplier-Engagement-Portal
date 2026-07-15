@@ -2,56 +2,56 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 5 — v3.0 kickoff (database upgrade), by Project Governor
-**Last updated:** 14 July 2026 — Project Governor, pre-v3.0-build
-**Live URL:** https://supplier-engagement-portal.netlify.app/ (Netlify — sole target; GitHub Pages backup retired 14 July 2026)
+**Session:** 6 — v3.0 build (database, EcoVadis registration, consent), by Claude Code
+**Last updated:** 15 July 2026 — Claude Code, v3.0 build
+**Live URL:** https://supplier-engagement-portal.netlify.app/ (Netlify — sole target)
 
 ## Current state
-**v2.0 is live and confirmed working end-to-end in production** at the URL above — the React app, all 7 questionnaire sections, both doors (guided form + download/upload), client-side upload parsing, and the branded PDF export are deployed and functioning, not just locally. v2.0 was code-complete, built clean (`npm run build`), and passed a full acceptance walkthrough (all 15 v2.0 criteria). Deployment is CI-based: any push to `main` auto-redeploys via Netlify (`netlify.toml`: `npm run build`, publish `dist`, Node 22). The two builder-overridable defaults are settled (Door 2 blocks Submit on a missing required answer; landing button stays "Complete Questionnaire"), and the EcoVadis button's interim destination (the EcoVadis homepage) is accepted.
-**v3.0 has not started.** It promotes the tool from Tier 1 (session-only, nothing stored) to Tier 2: supplier submissions now persist to Supabase, a new EcoVadis Registration screen captures the EcoVadis route, and GDPR consent is required at every submission point. The Supabase project exists (`hqqngissvcbevktcizit`, empty) and the Netlify env vars are set.
-[Rule: this section describes what exists and works right now — never what is planned. Completed checklist items get absorbed here in compressed form.]
+**v3.0 is code-complete and builds clean** (`npm run build`, v3.0.0). The portal is now Tier 2: supplier submissions persist to Supabase, and the app is **write-only**.
+
+- **Database (Supabase `hqqngissvcbevktcizit`):** `suppliers` + `submissions` tables, `submissions.supplier_id` index, RLS enabled. `anon` is INSERT-only, enforced in **two layers** — INSERT-only RLS policies *and* non-INSERT privileges revoked at the GRANT layer. Verified acting as the `anon` role: INSERT succeeds, SELECT/UPDATE denied, `consent_given = false` blocked by CHECK. Schema documented in `docs/supabase-setup.md` (the schema source of truth).
+- **Write paths:** EcoVadis route = one direct `suppliers` insert (`route=ecovadis`, `status=declared`). Questionnaire route = the `submit_questionnaire` RPC (SECURITY DEFINER, EXECUTE to `anon`) writing `suppliers` + `submissions` **atomically** — no orphan rows if the second insert fails. Verified atomic (invalid door rolls back both). The client **never reads** — no `.select()` on either table.
+- **EcoVadis Registration screen (new):** 5 fields + consent; on valid consented Continue it writes the row then opens ecovadis.com in a new tab. A failed write shows a clear error and **blocks the redirect** (verified in-browser).
+- **GDPR consent:** unticked, blocking checkbox at all three submission points (guided form final step, upload review, EcoVadis), brand-voice text stating what/why/where (US)/how long (24 mo)/deletion contact. `consent_given/at/version` written on every supplier row; `CONSENT_VERSION = 2026-v1`.
+- **Confirmation** states the submission was recorded + shows 24-month retention and rebecca@lcaresource.com. A failed write never reaches Confirmation (verified). PDF export retained.
+- **Retired GitHub Pages leftovers:** `import.meta.env.BASE_URL` asset handling removed (absolute `/assets/` paths); Vite `base` is `/`. (No `deploy-pages.yml` existed in the repo.)
+
+[Rule: this section describes what exists and works right now — never what is planned.]
 
 ## Last session
-Session 4 (8 July 2026): added a GitHub Pages backup deploy alongside Netlify. **This is now being reverted in v3.0** — Pages is retired (it would lack the Supabase env vars and silently fail to record submissions), so the `deploy-pages.yml` workflow and the `VITE_BASE` subpath handling are removed and Vite `base` returns to `/`.
-[Rule: 3–5 lines maximum. Replace each session — what was built, changed, or fixed.]
+Session 6 (15 July 2026): Built all of v3.0 — schema + RLS + atomic RPC via Supabase MCP (write-only invariant proven as the anon role), the EcoVadis Registration screen, consent at all three points, both-door writes with failure handling, updated Confirmation. Removed the Pages `BASE_URL` handling. Built clean; drove the UI in a headless browser (17/17 checks: routing, validation, consent gating, failed-write handling).
+[Rule: 3–5 lines maximum. Replace each session.]
 
 ## Remaining work
-- [ ] Remove the GitHub Pages deploy: delete `.github/workflows/deploy-pages.yml`, drop the `VITE_BASE`/`import.meta.env.BASE_URL` subpath handling, set Vite `base` back to `/`
-- [ ] Connect to Supabase project `hqqngissvcbevktcizit` via MCP; create the `suppliers` and `submissions` tables, the anon INSERT-only RLS policies, and the `submissions.supplier_id` index; then write docs/supabase-setup.md
-- [ ] **Verify RLS before any UI** — with the anon key, confirm INSERT succeeds and SELECT is denied on both tables (spec §6, criterion 13)
-- [ ] Confirm the Supabase plan with the builder — a Free-tier project pauses after ~1 week idle and would break the live form
-- [ ] Build the EcoVadis Registration screen (spec §8) — five fields + consent; on Continue, write a `suppliers` row (`route=ecovadis`, `status=declared`) then open ecovadis.com in a new tab
-- [ ] Add the GDPR consent checkbox (unticked, blocking) to all three submission points: Guided Form final step, Upload Review, EcoVadis Registration
-- [ ] Wire the database writes for both doors and the EcoVadis route, including failure handling — a failed write never shows Confirmation and blocks the EcoVadis redirect (spec §9)
-- [ ] Ensure both doors emit identical answer JSON keyed by question ID from the existing shared field mapping (spec §5, criterion 11)
-- [ ] Update the Confirmation screen — state the submission was recorded; show 24-month retention + rebecca@lcaresource.com (spec §8)
-- [ ] Test both routes end to end; verify the rows land correctly in the Supabase dashboard
-- [ ] Acceptance-criteria pass — verify all 20 criteria in spec §13 before deploy
-- [ ] Push to `main` → Netlify auto-deploys
+- [ ] **Verify a live success-path write end to end.** The sandbox's egress policy blocks `supabase.co`, so a *successful* write could not be exercised from here (the DB layer was proven directly via MCP; the failed-write UX was proven in-browser). Confirm once on the deployed Netlify site: submit via each route and check the rows land in the Supabase dashboard (spec criteria 3, 7, 10, 11, 18).
+- [ ] Confirm the Netlify env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) are live and trigger a redeploy so the client is configured in production.
+- [ ] Optional: refine how the questionnaire's free-text S1 maps to the `suppliers` identity columns (see Build decisions) if Rebecca wants cleaner company/country/contact separation in the dashboard.
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions
-[Carried forward from v2.0 — still authoritative. New v3.0 decisions get appended here as they are made.]
-- **S1–S7 field mapping** derived from `assets/The_Corporate_Supplier_Questionnaire_2026.xlsx` (single sheet, one row per question) and confirmed with the builder 7 July 2026. Every question is exactly one form field so Door 1 and Door 2 share an identical field shape — this is the shape the v3.0 `answers` JSON must reuse. Column G (reviewer Status) is out of scope for the supplier tool.
-- S1's EcoVadis bypass question was **dropped from Door 1** in v2.0 (a supplier only reaches Door 1 via the non-EcoVadis path). In v3.0 that routing is captured by the new EcoVadis Registration screen instead.
-- ESRS reference codes (E1-4, S2-1, etc.) are shown to suppliers as small muted per-question tags — v2.0's users are ESRS-literate.
-- The sheet's closing declaration (accuracy confirmation + Authorised Signatory Name + Date) is a final attestation step at the end of Section 7, keeping the "7 sections" framing. (Distinct from the new GDPR consent checkbox, which is a separate, required control.)
-- React scaffold: Tailwind v3 (config-based) for brand tokens; `xlsx` (SheetJS) for .xlsx/.csv parsing; `jsPDF` v4 for the client-side PDF. `jsPDF` and `xlsx` are dynamically imported so they load only at Door 2 / Confirmation (main bundle ~911 KB → ~180 KB).
-- Downloadable assets live in `/public/assets` (Vite convention), linked absolutely.
-- PDF export uses jsPDF built-in times/helvetica as stand-ins for Playfair/DM Sans; brand colors, black header band, and square corners applied exactly.
-- Intentional brand exception: the Landing Page's two section dividers are Dark Blue (`#00008B`, 1px) by explicit builder request — not a change to the brand skill.
-- Acid Lime used exactly twice (hero "2026" underline; "Smart Intake" badge). CSRD never named on the page.
-[Rule: one line per decision made during the build that is not in the spec — field formats, naming choices, library picks. Future sessions depend on these to stay consistent.]
+[Carried forward from v2.0 — still authoritative. New v3.0 decisions appended.]
+- **S1–S7 field mapping** derived from `The_Corporate_Supplier_Questionnaire_2026.xlsx`; every question is one form field so Door 1 and Door 2 share an identical `answers` shape (keyed by lowercase question id, e.g. `s2_q1`). This is the shape written to `submissions.answers`.
+- S1's EcoVadis bypass question was dropped from Door 1 in v2.0; v3.0 captures that routing via the new EcoVadis Registration screen.
+- ESRS reference codes shown as small muted per-question tags.
+- The sheet's closing declaration (accuracy confirmation + Authorised Signatory Name) is a final attestation at the end of Section 7 — **distinct from the new GDPR consent checkbox**, which sits below a divider on the same final step.
+- React scaffold: Tailwind v3; `xlsx` for parsing; `jsPDF` for the PDF (both dynamically imported).
+- Downloadable assets live in `/public/assets`, linked absolutely (`/assets/...`).
+- **(v3.0) Write-only pattern:** `anon` has no SELECT, so the app never uses `.select()`/RETURNING. The questionnaire write goes through a SECURITY DEFINER RPC for atomicity; EcoVadis is a single direct insert. `@supabase/supabase-js` v2 `.insert()` without `.select()` sends `return=minimal`, so no read is needed.
+- **(v3.0) Questionnaire identity mapping:** the questionnaire's S1 is free text (`s1_q1` = legal name + registered country, `s1_q2` = contact name/title/email). The `suppliers` identity columns are derived: `company_name` = `country` = `s1_q1` (verbatim; the not-null country is embedded there), `contact_name` = `s1_q2`, `contact_email` = first email matched in `s1_q2` (fallback: the raw string). The full detail always lives in `submissions.answers`. Flagged for optional refinement.
+- **(v3.0) Consent version** `2026-v1` (`src/lib/db.js`); bump it in step with any wording change in `ConsentCheckbox.jsx`.
+- Intentional brand exception: the Landing Page's two section dividers are Dark Blue (`#00008B`) by explicit builder request.
+- Acid Lime used exactly twice on the landing page (hero "2026" underline; "Smart Intake" badge).
+[Rule: one line per decision made during the build that is not in the spec.]
 
 ## Known issues
-- **Retention deletion is manual for v3.0** — nothing auto-deletes at 24 months. Rebecca must diarise this; it is a live GDPR obligation, not a nicety. Automating it is a v4.0 candidate.
-- **Supabase plan unconfirmed** — if the project is on Free tier it pauses after ~1 week without traffic, and suppliers' submissions will fail until it is unpaused. Confirm/upgrade before real supplier use.
-- **Supabase region is us-east-1 (US), not EU.** The project already exists there and the region cannot change without a new project; the consent text discloses US storage. Acceptable as-is, noted for the record.
-- `xlsx` (SheetJS) is pinned at 0.18.5 with two known high-severity advisories unpatched on npm; the patched build lives only on SheetJS's CDN, unreachable from the build environment. Risk is contained (parsing is client-side on a file the supplier uploads themselves), but the builder may swap in the CDN tarball outside this environment.
-- Intentional brand deviation: the Dark Blue dividers — do not "fix" back to brand-compliant without checking with the builder.
-- Cosmetic polish (non-blocking): validation error text uses a non-brand red; the Guided Form shows two "Back" controls with different meanings; PDF fonts are jsPDF stand-ins. Address only if the builder wants the extra polish.
+- **Supabase is on the Free tier (builder decision, 15 July 2026).** It pauses after ~1 week idle; while paused, submissions fail. Manually unpause in the dashboard around idle periods, or upgrade to Pro before sustained supplier traffic.
+- **Retention deletion is manual** — nothing auto-deletes at 24 months. Rebecca must diarise this; it is a live GDPR obligation.
+- **Supabase region is us-east-1 (US), not EU** — disclosed in the consent text; cannot change without a new project.
+- Consent/declaration checkboxes use native browser styling (blue tick), consistent with the existing v2.0 checkboxes — not brand-restyled.
+- `xlsx` (SheetJS) pinned at 0.18.5 with known advisories unpatched on npm; risk contained (client-side parse of the supplier's own file).
+- Cosmetic (non-blocking): validation error text uses a non-brand red; the Guided Form shows two "Back" controls; PDF fonts are jsPDF stand-ins.
 [Rule: bugs, edge cases, and deferred fixes. One line each. Remove when resolved.]
 
 ## Notes for next session
-Start with the two foundations before any screen work: (1) remove the GitHub Pages deploy and reset Vite `base` to `/`, and (2) create the schema + RLS via Supabase MCP and **verify the anon key can insert but cannot select** — that write-only guarantee is the security invariant of the whole tool, so prove it before building any UI on top of it. Then confirm the Supabase plan with the builder.
+Verify one real submission per route on the **deployed** site and confirm the rows appear in the Supabase dashboard (this was the only thing the sandbox's blocked egress prevented). If the questionnaire's `company_name`/`country` columns look redundant to Rebecca in the dashboard, revisit the S1 identity mapping (Build decisions).
 [Rule: the builder writes here between sessions. Claude Code reads these aloud at session start, acts on them, then clears this section.]
