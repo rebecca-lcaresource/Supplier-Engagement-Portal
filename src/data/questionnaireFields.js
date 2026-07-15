@@ -8,6 +8,13 @@
 // field are intentionally omitted here — see PROGRESS.md "Build decisions."
 // The sheet's closing declaration block is represented below as
 // DECLARATION_FIELDS, appended to the end of Section 7 rather than as an S8.
+//
+// Section 1 (General Information) is captured as four STRUCTURED identity fields
+// (company_name, country, contact_name, contact_email) rather than the sheet's
+// free-text cells, so both doors write clean, consistent columns to the
+// `suppliers` table (matching the EcoVadis Registration screen). These four
+// fields have no `sheetRow` — they are collected on-screen (guided form Section 1,
+// or the Upload Review screen for Door 2), never parsed from the workbook.
 
 export const SECTIONS = [
   { id: 'S1', title: 'General Information', esrsHeader: 'All ESRS' },
@@ -21,23 +28,37 @@ export const SECTIONS = [
 
 // type: 'text' | 'textarea' | 'select'
 export const FIELDS = [
-  // --- S1 — General Information ---
+  // --- S1 — General Information (structured identity, collected on-screen) ---
   {
-    id: 's1_q1',
-    sheetRow: 6,
+    id: 'company_name',
     section: 'S1',
     esrsRef: null,
     type: 'text',
-    label: 'Legal name and registered country of the responding entity.',
+    label: 'Company name (legal entity)',
     required: true,
   },
   {
-    id: 's1_q2',
-    sheetRow: 7,
+    id: 'country',
     section: 'S1',
     esrsRef: null,
     type: 'text',
-    label: 'Primary contact name, title, and email address for this assessment.',
+    label: 'Registered country',
+    required: true,
+  },
+  {
+    id: 'contact_name',
+    section: 'S1',
+    esrsRef: null,
+    type: 'text',
+    label: 'Primary contact name',
+    required: true,
+  },
+  {
+    id: 'contact_email',
+    section: 'S1',
+    esrsRef: null,
+    type: 'email',
+    label: 'Primary contact email',
     required: true,
   },
 
@@ -321,10 +342,22 @@ export function isSectionValid(sectionId, answers) {
   return fieldsForSection(sectionId).every((f) => isFieldValid(f, answers[f.id]));
 }
 
+export const EMAIL_RE = /^[\w.+-]+@[\w-]+\.[\w.-]+$/;
+
+// S1 identity fields are collected on-screen (no sheetRow), not parsed from the
+// upload. Used to split "editable contact fields" from "read-only parsed answers"
+// on the Upload Review screen, and to skip them in the workbook parser.
+export const IDENTITY_FIELDS = FIELDS.filter((f) => f.section === 'S1');
+
 export function isFieldValid(field, value) {
+  const str = typeof value === 'string' ? value.trim() : '';
+  if (field.type === 'email') {
+    if (!field.required && str === '') return true;
+    return EMAIL_RE.test(str);
+  }
   if (!field.required) return true;
   if (field.type === 'checkbox') return value === true;
-  return typeof value === 'string' && value.trim().length > 0;
+  return str.length > 0;
 }
 
 export function isDeclarationValid(answers) {

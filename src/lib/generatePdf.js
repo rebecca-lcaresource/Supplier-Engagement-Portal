@@ -69,7 +69,7 @@ export async function generateSubmissionPdf({ answers, door }) {
 
   y = 40;
 
-  const supplierName = answers.s1_q1;
+  const supplierName = answers.company_name;
   if (supplierName) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);

@@ -11,6 +11,7 @@ export default function App() {
   const [view, setView] = useState('landing');
   const [submission, setSubmission] = useState(null); // { answers, door }
   const [parsedAnswers, setParsedAnswers] = useState(null);
+  const [contactHints, setContactHints] = useState(null);
 
   if (view === 'landing') {
     return (
@@ -52,8 +53,9 @@ export default function App() {
     return (
       <DownloadUpload
         onBack={() => setView('doorChoice')}
-        onParsed={(answers) => {
+        onParsed={(answers, hints) => {
           setParsedAnswers(answers);
+          setContactHints(hints);
           setView('uploadReview');
         }}
       />
@@ -64,8 +66,10 @@ export default function App() {
     return (
       <UploadReview
         parsedAnswers={parsedAnswers}
+        contactHints={contactHints}
         onReupload={() => {
           setParsedAnswers(null);
+          setContactHints(null);
           setView('downloadUpload');
         }}
         // Called only after the database write has succeeded.

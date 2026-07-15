@@ -2,9 +2,9 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 6 — v3.0 build (database, EcoVadis registration, consent), by Claude Code
+**Session:** 6 — v3.0 build (database, EcoVadis registration, consent) + structured questionnaire contact fields, by Claude Code
 **Last updated:** 15 July 2026 — Claude Code, v3.0 build
-**Live URL:** https://supplier-engagement-portal.netlify.app/ (Netlify — sole target)
+**Live URL:** https://supplier-engagement-portal.netlify.app/ (Netlify — sole target). v3.0 deployed via PR #2; EcoVadis route confirmed live. Netlify env vars confirmed set.
 
 ## Current state
 **v3.0 is code-complete and builds clean** (`npm run build`, v3.0.0). The portal is now Tier 2: supplier submissions persist to Supabase, and the app is **write-only**.
@@ -19,13 +19,11 @@
 [Rule: this section describes what exists and works right now — never what is planned.]
 
 ## Last session
-Session 6 (15 July 2026): Built all of v3.0 — schema + RLS + atomic RPC via Supabase MCP (write-only invariant proven as the anon role), the EcoVadis Registration screen, consent at all three points, both-door writes with failure handling, updated Confirmation. Removed the Pages `BASE_URL` handling. Built clean; drove the UI in a headless browser (17/17 checks: routing, validation, consent gating, failed-write handling).
+Session 6 (15 July 2026): Built all of v3.0 — schema + RLS + atomic RPC (write-only invariant proven as the anon role), EcoVadis Registration screen, consent at all three points, both-door writes with failure handling, updated Confirmation, removed Pages `BASE_URL` handling. Deployed via PR #2 → main → Netlify; EcoVadis route confirmed writing live. Then replaced the questionnaire's free-text Section 1 with four **structured contact fields** (company/country/contact name/email) on both doors so the `suppliers` columns are clean. Built clean; browser-verified (17/17 v3.0 checks earlier + 14/14 for the structured fields: guided S1, email validation, upload review contact fields, template parse).
 [Rule: 3–5 lines maximum. Replace each session.]
 
 ## Remaining work
-- [ ] **Verify a live success-path write end to end.** The sandbox's egress policy blocks `supabase.co`, so a *successful* write could not be exercised from here (the DB layer was proven directly via MCP; the failed-write UX was proven in-browser). Confirm once on the deployed Netlify site: submit via each route and check the rows land in the Supabase dashboard (spec criteria 3, 7, 10, 11, 18).
-- [ ] Confirm the Netlify env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) are live and trigger a redeploy so the client is configured in production.
-- [ ] Optional: refine how the questionnaire's free-text S1 maps to the `suppliers` identity columns (see Build decisions) if Rebecca wants cleaner company/country/contact separation in the dashboard.
+- [ ] **Verify the questionnaire route's live success-path write.** The EcoVadis route is confirmed live (a real submission landed a clean `suppliers` row on 15 Jul). Still to confirm on the deployed site: a guided-form submit and an upload submit each land a `suppliers` + `submissions` row in the dashboard (spec criteria 7, 10, 11, 18). Sandbox egress blocks `supabase.co`, so this must be done from the live site.
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions
@@ -37,7 +35,7 @@ Session 6 (15 July 2026): Built all of v3.0 — schema + RLS + atomic RPC via Su
 - React scaffold: Tailwind v3; `xlsx` for parsing; `jsPDF` for the PDF (both dynamically imported).
 - Downloadable assets live in `/public/assets`, linked absolutely (`/assets/...`).
 - **(v3.0) Write-only pattern:** `anon` has no SELECT, so the app never uses `.select()`/RETURNING. The questionnaire write goes through a SECURITY DEFINER RPC for atomicity; EcoVadis is a single direct insert. `@supabase/supabase-js` v2 `.insert()` without `.select()` sends `return=minimal`, so no read is needed.
-- **(v3.0) Questionnaire identity mapping:** the questionnaire's S1 is free text (`s1_q1` = legal name + registered country, `s1_q2` = contact name/title/email). The `suppliers` identity columns are derived: `company_name` = `country` = `s1_q1` (verbatim; the not-null country is embedded there), `contact_name` = `s1_q2`, `contact_email` = first email matched in `s1_q2` (fallback: the raw string). The full detail always lives in `submissions.answers`. Flagged for optional refinement.
+- **(v3.0) Questionnaire Section 1 = structured identity fields** (`company_name`, `country`, `contact_name`, `contact_email`), replacing the old free-text S1 (`s1_q1`/`s1_q2`) on both doors, so the `suppliers` columns are clean and consistent with the EcoVadis route. These four have no `sheetRow` — collected on-screen (guided-form Section 1, or the Upload Review screen for Door 2), never parsed from the workbook. On upload they are pre-filled best-effort from the file's original S1 cells. `contact_email` is a validated email field. Both doors still emit an identical `answers` shape.
 - **(v3.0) Consent version** `2026-v1` (`src/lib/db.js`); bump it in step with any wording change in `ConsentCheckbox.jsx`.
 - Intentional brand exception: the Landing Page's two section dividers are Dark Blue (`#00008B`) by explicit builder request.
 - Acid Lime used exactly twice on the landing page (hero "2026" underline; "Smart Intake" badge).
