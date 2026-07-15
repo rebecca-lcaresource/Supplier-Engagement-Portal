@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import Header from './landing/Header.jsx';
 import FieldInput from './guidedForm/FieldInput.jsx';
+import ConsentCheckbox from './ConsentCheckbox.jsx';
+import { writeQuestionnaireSubmission } from '../lib/db.js';
 import {
   SECTIONS,
   fieldsForSection,
@@ -8,10 +10,14 @@ import {
   isFieldValid,
 } from '../data/questionnaireFields.js';
 
-export default function UploadReview({ parsedAnswers, onReupload, onSubmit }) {
+export default function UploadReview({ parsedAnswers, onReupload, onSubmitted }) {
   const [declaration, setDeclaration] = useState({});
   const [errors, setErrors] = useState({});
   const [showMissingBanner, setShowMissingBanner] = useState(false);
+  const [consent, setConsent] = useState(false);
+  const [consentError, setConsentError] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const missingFieldIds = SECTIONS.flatMap((s) => fieldsForSection(s.id))
     .filter((f) => !isFieldValid(f, parsedAnswers[f.id]))
@@ -27,7 +33,8 @@ export default function UploadReview({ parsedAnswers, onReupload, onSubmit }) {
     });
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    setSubmitError(null);
     if (missingFieldIds.length > 0) {
       setShowMissingBanner(true);
       return;
@@ -39,12 +46,27 @@ export default function UploadReview({ parsedAnswers, onReupload, onSubmit }) {
         newErrors[f.id] = f.type === 'checkbox' ? 'Please confirm before continuing.' : 'This field is required.';
       }
     });
+    const missingConsent = !consent;
+    if (missingConsent) setConsentError('Please confirm consent before submitting.');
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
+    if (missingConsent) return;
 
-    onSubmit({ ...parsedAnswers, ...declaration });
+    // Write BEFORE Confirmation. A failed write never advances — supplier retries.
+    const answers = { ...parsedAnswers, ...declaration };
+    setSubmitting(true);
+    try {
+      await writeQuestionnaireSubmission({ answers, door: 'upload' });
+      onSubmitted(answers);
+    } catch (err) {
+      setSubmitError(
+        'Your submission was not recorded. Please check your connection and submit again.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -115,12 +137,35 @@ export default function UploadReview({ parsedAnswers, onReupload, onSubmit }) {
             ))}
           </div>
 
+          <div className="mb-lg pt-lg" style={{ borderTop: '0.5px solid var(--tc-border)' }}>
+            <ConsentCheckbox
+              variant="questionnaire"
+              checked={consent}
+              onChange={(v) => {
+                setConsent(v);
+                if (v) setConsentError(null);
+              }}
+              error={consentError}
+            />
+          </div>
+
+          {submitError && (
+            <div className="border-l-2 p-md mb-lg bg-white" style={{ borderColor: '#C0392B' }}>
+              <p style={{ color: '#C0392B' }}>{submitError}</p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <button type="button" onClick={onReupload} className="tc-btn-secondary">
               Re-upload a different file
             </button>
-            <button type="button" onClick={handleSubmit} className="tc-btn-primary">
-              Submit
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="tc-btn-primary"
+            >
+              {submitting ? 'Submitting…' : 'Submit'}
             </button>
           </div>
         </div>

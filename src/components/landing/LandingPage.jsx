@@ -7,7 +7,7 @@ import Timeline from './Timeline.jsx';
 import Resources from './Resources.jsx';
 import Footer from './Footer.jsx';
 
-export default function LandingPage({ onCompleteQuestionnaire }) {
+export default function LandingPage({ onCompleteQuestionnaire, onEcoVadis }) {
   return (
     <div>
       <header className="py-lg">
@@ -24,7 +24,7 @@ export default function LandingPage({ onCompleteQuestionnaire }) {
       <div className="max-w-page mx-auto px-md md:px-2xl"><div className="tc-divider" /></div>
       <HowItWorks />
 
-      <DecisionTree id="decision" onCompleteQuestionnaire={onCompleteQuestionnaire} />
+      <DecisionTree id="decision" onCompleteQuestionnaire={onCompleteQuestionnaire} onEcoVadis={onEcoVadis} />
 
       <section className="py-3xl">
         <div className="max-w-page mx-auto px-md md:px-2xl">

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import LandingPage from './components/landing/LandingPage.jsx';
+import EcoVadisRegistration from './components/EcoVadisRegistration.jsx';
 import DoorChoice from './components/DoorChoice.jsx';
 import GuidedForm from './components/guidedForm/GuidedForm.jsx';
 import DownloadUpload from './components/DownloadUpload.jsx';
@@ -12,7 +13,16 @@ export default function App() {
   const [parsedAnswers, setParsedAnswers] = useState(null);
 
   if (view === 'landing') {
-    return <LandingPage onCompleteQuestionnaire={() => setView('doorChoice')} />;
+    return (
+      <LandingPage
+        onCompleteQuestionnaire={() => setView('doorChoice')}
+        onEcoVadis={() => setView('ecovadisRegistration')}
+      />
+    );
+  }
+
+  if (view === 'ecovadisRegistration') {
+    return <EcoVadisRegistration onBack={() => setView('landing')} />;
   }
 
   if (view === 'doorChoice') {
@@ -29,8 +39,9 @@ export default function App() {
     return (
       <GuidedForm
         onBack={() => setView('doorChoice')}
-        onSubmit={(answers) => {
-          setSubmission({ answers, door: 'door1' });
+        // Called only after the database write has succeeded.
+        onSubmitted={(answers) => {
+          setSubmission({ answers, door: 'guided_form' });
           setView('confirmation');
         }}
       />
@@ -57,8 +68,9 @@ export default function App() {
           setParsedAnswers(null);
           setView('downloadUpload');
         }}
-        onSubmit={(answers) => {
-          setSubmission({ answers, door: 'door2' });
+        // Called only after the database write has succeeded.
+        onSubmitted={(answers) => {
+          setSubmission({ answers, door: 'upload' });
           setView('confirmation');
         }}
       />

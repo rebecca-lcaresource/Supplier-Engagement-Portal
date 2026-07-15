@@ -2,6 +2,8 @@ import { useState } from 'react';
 import Header from '../landing/Header.jsx';
 import SectionNav from './SectionNav.jsx';
 import FieldInput from './FieldInput.jsx';
+import ConsentCheckbox from '../ConsentCheckbox.jsx';
+import { writeQuestionnaireSubmission } from '../../lib/db.js';
 import {
   SECTIONS,
   fieldsForSection,
@@ -9,10 +11,14 @@ import {
   DECLARATION_FIELDS,
 } from '../../data/questionnaireFields.js';
 
-export default function GuidedForm({ onSubmit, onBack }) {
+export default function GuidedForm({ onSubmitted, onBack }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
+  const [consent, setConsent] = useState(false);
+  const [consentError, setConsentError] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const section = SECTIONS[currentIndex];
   const isLastSection = currentIndex === SECTIONS.length - 1;
@@ -56,7 +62,8 @@ export default function GuidedForm({ onSubmit, onBack }) {
     setCurrentIndex(index);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
+    setSubmitError(null);
     // Validate every section, not just the current one.
     let allErrors = {};
     let firstInvalidIndex = null;
@@ -71,13 +78,30 @@ export default function GuidedForm({ onSubmit, onBack }) {
       allErrors = { ...allErrors, ...sErrors };
     });
 
+    // Consent is required and validated alongside the fields (spec §7/§9).
+    const missingConsent = !consent;
+    if (missingConsent) setConsentError('Please confirm consent before submitting.');
+
     if (Object.keys(allErrors).length > 0) {
       setErrors(allErrors);
       setCurrentIndex(firstInvalidIndex);
       return;
     }
+    if (missingConsent) return;
 
-    onSubmit(answers);
+    // Write to the database BEFORE showing Confirmation. A failed write must never
+    // advance to Confirmation — the supplier sees a "not recorded" error and can retry.
+    setSubmitting(true);
+    try {
+      await writeQuestionnaireSubmission({ answers, door: 'guided_form' });
+      onSubmitted(answers);
+    } catch (err) {
+      setSubmitError(
+        'Your submission was not recorded. Please check your connection and submit again.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -110,6 +134,26 @@ export default function GuidedForm({ onSubmit, onBack }) {
             />
           ))}
 
+          {isLastSection && (
+            <div className="mt-xl mb-lg pt-lg" style={{ borderTop: '0.5px solid var(--tc-border)' }}>
+              <ConsentCheckbox
+                variant="questionnaire"
+                checked={consent}
+                onChange={(v) => {
+                  setConsent(v);
+                  if (v) setConsentError(null);
+                }}
+                error={consentError}
+              />
+            </div>
+          )}
+
+          {submitError && (
+            <div className="border-l-2 p-md mb-lg bg-white" style={{ borderColor: '#C0392B' }}>
+              <p style={{ color: '#C0392B' }}>{submitError}</p>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mt-xl">
             <button
               type="button"
@@ -122,8 +166,13 @@ export default function GuidedForm({ onSubmit, onBack }) {
             </button>
 
             {isLastSection ? (
-              <button type="button" onClick={handleSubmit} className="tc-btn-primary">
-                Submit
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="tc-btn-primary"
+              >
+                {submitting ? 'Submitting…' : 'Submit'}
               </button>
             ) : (
               <button type="button" onClick={handleNext} className="tc-btn-primary">
