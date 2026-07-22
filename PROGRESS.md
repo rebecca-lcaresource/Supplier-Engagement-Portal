@@ -2,9 +2,9 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 6 — v3.0 build (database, EcoVadis registration, consent) + structured questionnaire contact fields, by Claude Code
-**Last updated:** 15 July 2026 — Claude Code, v3.0 build
-**Live URL:** https://supplier-engagement-portal.netlify.app/ (Netlify — sole target). v3.0 deployed via PR #2; EcoVadis route confirmed live. Netlify env vars confirmed set.
+**Session:** 6 — v3.0 (database, EcoVadis, consent) + structured questionnaire contact fields + v3.1 magic-link email verification, by Claude Code
+**Last updated:** 15 July 2026 — Claude Code
+**Live URL:** https://supplier-engagement-portal.netlify.app/ (Netlify — sole target). v3.0 deployed via PR #2; both routes confirmed writing live (EcoVadis + guided-form questionnaire, real rows in the dashboard). Netlify env vars confirmed set.
 
 ## Current state
 **v3.0 is code-complete and builds clean** (`npm run build`, v3.0.0). The portal is now Tier 2: supplier submissions persist to Supabase, and the app is **write-only**.
@@ -15,6 +15,7 @@
 - **GDPR consent:** unticked, blocking checkbox at all three submission points (guided form final step, upload review, EcoVadis), brand-voice text stating what/why/where (US)/how long (24 mo)/deletion contact. `consent_given/at/version` written on every supplier row; `CONSENT_VERSION = 2026-v1`.
 - **Confirmation** states the submission was recorded + shows 24-month retention and rebecca@lcaresource.com. A failed write never reaches Confirmation (verified). PDF export retained.
 - **Retired GitHub Pages leftovers:** `import.meta.env.BASE_URL` asset handling removed (absolute `/assets/` paths); Vite `base` is `/`. (No `deploy-pages.yml` existed in the repo.)
+- **v3.1 — Magic-link email verification on the questionnaire route** (builder request, 15 July 2026): the supplier enters their email → Supabase Auth sends a magic link (Resend SMTP) → they click it, return signed in, and complete the questionnaire. The **verified email is recorded as `contact_email`** (enforced in `db.js` from the session, not the form field, which is shown read-only). Signed-in suppliers write as the `authenticated` role — still **write-only** (migration `v3_1_allow_authenticated_inserts`, verified). The **EcoVadis route is not gated** (still `anon`). New files: `src/lib/auth.js`, `src/components/EmailGate.jsx`.
 
 [Rule: this section describes what exists and works right now — never what is planned.]
 
@@ -23,7 +24,10 @@ Session 6 (15 July 2026): Built all of v3.0 — schema + RLS + atomic RPC (write
 [Rule: 3–5 lines maximum. Replace each session.]
 
 ## Remaining work
-- [ ] **Verify the questionnaire route's live success-path write.** The EcoVadis route is confirmed live (a real submission landed a clean `suppliers` row on 15 Jul). Still to confirm on the deployed site: a guided-form submit and an upload submit each land a `suppliers` + `submissions` row in the dashboard (spec criteria 7, 10, 11, 18). Sandbox egress blocks `supabase.co`, so this must be done from the live site.
+- [ ] **Test the magic-link flow live (v3.1).** Sandbox egress blocks `supabase.co`, so the email send + link click can only be tested on the deployed site: click Complete Questionnaire → enter email → receive link → click → land in the questionnaire → submit → confirm the row shows the verified email. (Re-test in an incognito window — the browser stays signed in between tries.)
+- [ ] **Governor pass for the access-model change.** v3.1 gates the questionnaire behind Supabase Auth (magic link) — that is A2/authentication, which the v3.0 spec listed as out of scope (A1, "no login"). `docs/product-spec.md` and `CLAUDE.md` still say A1/no-login and should be re-governed to reflect the new reality.
+- [ ] Optional hardening: revoke `anon` EXECUTE on `submit_questionnaire` so questionnaire submissions require a verified (authenticated) user at the DB level too (kept for now to avoid a deploy-window break).
+- [ ] Upload (Door 2) door not yet tested with a live success-path write.
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions

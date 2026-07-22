@@ -11,9 +11,12 @@ import {
   DECLARATION_FIELDS,
 } from '../../data/questionnaireFields.js';
 
-export default function GuidedForm({ onSubmitted, onBack }) {
+export default function GuidedForm({ onSubmitted, onBack, verifiedEmail }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
+  // Pre-fill the contact email with the magic-link-verified address (locked below).
+  const [answers, setAnswers] = useState(() =>
+    verifiedEmail ? { contact_email: verifiedEmail } : {}
+  );
   const [errors, setErrors] = useState({});
   const [consent, setConsent] = useState(false);
   const [consentError, setConsentError] = useState(null);
@@ -136,6 +139,7 @@ export default function GuidedForm({ onSubmitted, onBack }) {
               value={answers[field.id]}
               error={errors[field.id]}
               onChange={(value) => handleChange(field.id, value)}
+              readOnly={field.id === 'contact_email' && !!verifiedEmail}
             />
           ))}
 

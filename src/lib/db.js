@@ -3,6 +3,7 @@
 // promise means "not recorded"; callers must show an error and must NOT show Confirmation
 // (and, on the EcoVadis route, must NOT redirect).
 import { supabase } from './supabase.js';
+import { getSession, verifiedEmail } from './auth.js';
 
 // The version of the consent wording the supplier agreed to. Bump when the text changes
 // so historic consents stay auditable (stored on every suppliers row).
@@ -48,14 +49,20 @@ export async function writeEcoVadisRegistration({
 // the suppliers columns directly.
 export async function writeQuestionnaireSubmission({ answers, door }) {
   requireClient();
+  // The recorded contact email is ALWAYS the magic-link-verified address — never a value
+  // typed into the form — so a stored response is always tied to a proven email. Fall back
+  // to the form value only if there is somehow no session (e.g. auth misconfigured).
+  const session = await getSession();
+  const email = verifiedEmail(session) || String(answers.contact_email || '').trim();
+  const finalAnswers = { ...answers, contact_email: email };
   const { error } = await supabase.rpc('submit_questionnaire', {
     p_company_name: String(answers.company_name || '').trim(),
     p_country: String(answers.country || '').trim(),
     p_contact_name: String(answers.contact_name || '').trim(),
-    p_contact_email: String(answers.contact_email || '').trim(),
+    p_contact_email: email,
     p_consent_version: CONSENT_VERSION,
     p_door: door, // 'guided_form' | 'upload'
-    p_answers: answers,
+    p_answers: finalAnswers,
   });
   if (error) throw new Error(error.message || 'The submission could not be recorded.');
 }

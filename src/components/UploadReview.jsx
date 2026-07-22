@@ -11,14 +11,15 @@ import {
   isFieldValid,
 } from '../data/questionnaireFields.js';
 
-export default function UploadReview({ parsedAnswers, contactHints, onReupload, onSubmitted }) {
+export default function UploadReview({ parsedAnswers, contactHints, verifiedEmail, onReupload, onSubmitted }) {
   // S1 contact fields are collected here (not in the workbook), pre-filled from
-  // the file's original free-text S1 cells where we could read them.
+  // the file's original free-text S1 cells where we could read them. The contact
+  // email is the magic-link-verified address (locked below).
   const [contact, setContact] = useState(() => ({
     company_name: contactHints?.company_name || '',
     country: contactHints?.country || '',
     contact_name: contactHints?.contact_name || '',
-    contact_email: contactHints?.contact_email || '',
+    contact_email: verifiedEmail || contactHints?.contact_email || '',
   }));
   const [declaration, setDeclaration] = useState({});
   const [errors, setErrors] = useState({});
@@ -145,6 +146,7 @@ export default function UploadReview({ parsedAnswers, contactHints, onReupload, 
                 value={contact[field.id]}
                 error={errors[field.id]}
                 onChange={(value) => handleContactChange(field.id, value)}
+                readOnly={field.id === 'contact_email' && !!verifiedEmail}
               />
             ))}
           </div>

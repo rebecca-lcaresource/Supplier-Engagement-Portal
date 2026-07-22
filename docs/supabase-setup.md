@@ -111,6 +111,15 @@ All probe rows were rolled back / deleted; both tables are empty.
 1. `v3_0_suppliers_submissions_schema` — tables, index, RLS enabled, anon INSERT policies.
 2. `v3_0_lock_anon_to_insert_only` — revoke non-INSERT privileges from `anon` (defense in depth).
 3. `v3_0_submit_questionnaire_rpc` — atomic two-insert RPC (SECURITY DEFINER; EXECUTE to `anon`).
+4. `v3_1_allow_authenticated_inserts` — magic-link support: `authenticated` role gets the same write-only capability as `anon` (INSERT policies + INSERT grant; SELECT/UPDATE/DELETE revoked), and EXECUTE on the RPC. `anon` kept as-is (EcoVadis route + zero-downtime deploy).
+
+## Authentication (magic link) — questionnaire route
+
+The questionnaire route is gated by **Supabase Auth magic link** (v3.1). A supplier enters their email, receives a one-time link (sent via Resend SMTP), clicks it, and returns signed in as the `authenticated` role. The verified email is written as `contact_email` on the submission. The EcoVadis route is **not** gated — it still writes as `anon`.
+
+Write-only still holds for `authenticated` exactly as for `anon`: INSERT only, no SELECT/UPDATE/DELETE.
+
+**Required dashboard config (set outside code):** Authentication → Providers → **Email enabled**; Authentication → URL Configuration → **Site URL + Redirect URLs** include the Netlify site URL; SMTP configured (**Resend**). Without the redirect URL allowlisted, the emailed link fails.
 
 ## Notes
 

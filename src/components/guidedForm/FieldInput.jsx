@@ -1,4 +1,4 @@
-export default function FieldInput({ field, value, error, onChange }) {
+export default function FieldInput({ field, value, error, onChange, readOnly = false }) {
   const inputId = `field-${field.id}`;
 
   if (field.type === 'checkbox') {
@@ -49,7 +49,12 @@ export default function FieldInput({ field, value, error, onChange }) {
           className={`tc-input ${error ? 'has-error' : ''}`}
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
+          readOnly={readOnly}
+          style={readOnly ? { background: 'var(--tc-chalk)', color: 'var(--tc-stone)' } : undefined}
         />
+      )}
+      {readOnly && field.id === 'contact_email' && (
+        <p className="text-[13px] mt-xs text-stone">Verified — this is the email you confirmed.</p>
       )}
 
       {field.type === 'select' && (
