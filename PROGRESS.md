@@ -3,8 +3,8 @@
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
 **Session:** 7 — v4.0 build (magic-link email verification, Tier 3), by Claude Code
-**Last updated:** 22 July 2026 — Claude Code, v4.0 build
-**Live URL:** https://supplier-engagement-portal.netlify.app/ (Netlify — sole target). v3.0 deployed + both routes confirmed live earlier. v4.0 built this session; awaiting live magic-link test.
+**Last updated:** 22 July 2026 — Claude Code, v4.0 build + live magic-link confirmed
+**Live URL:** https://supplier-engagement-portal.netlify.app/ (Netlify — sole target). v4.0 deployed (PRs #4, #5). **Magic-link verification CONFIRMED WORKING LIVE 22 Jul** — link sent via Resend, clicked from spam, landed on the portal (verified session created for rebecca@lcaresource.com).
 
 ## Current state
 **v4.0 is code-complete and builds clean** (`npm run build`, v4.0.0). The portal is now **Tier 3**: a magic-link email-verification gate precedes route choice and all data entry. Everything from v3.0 (both doors, EcoVadis registration, consent, PDF, write-only) is retained.
@@ -22,9 +22,10 @@
 Session 7 (22 July 2026): Built v4.0 to the revised spec — magic-link verification gate at the front of the flow (Tier 3, A2). DB: verified columns, RPC verified params, writes moved `anon`→`authenticated` (anon insert revoked), all verified acting as each role. App: single "Start submission" CTA, Email Entry, Check-Your-Inbox, Route Choice, hard session gate, verified fields into both writes; reverted the v3.1 contact-email lock (now self-reported + separate verified column). Built clean; browser-verified 12/12 (single CTA, gate, verified→Route Choice→both routes, verified-email pre-fill, EcoVadis reachable). Deployed via PR to main.
 
 ## Remaining work
-- [ ] **Test the magic-link flow live.** Sandbox egress blocks `supabase.co`, so the email send + link click were tested with a simulated session only. On the deployed site: Start submission → enter your email → click the link → Route Choice → submit via each route → confirm the `suppliers` row has `verified_email` + `verified_at` (and a `submissions` row for the questionnaire). Re-test in incognito (the browser stays signed in between tries).
-- [ ] Builder: verify the `lcaresource.com` sending domain in Resend (SPF/DKIM) — deferrable to pre-go-live; until then links go to your own inbox.
-- [ ] Builder: upgrade Supabase to **Pro** before real supplier traffic — a paused Free project now breaks login, not just submissions.
+- [ ] **Complete one full end-to-end submission per route on the live site.** Auth (magic link → verified session → portal) is confirmed. Still to do: from a verified session, submit the questionnaire (guided + upload) and register via EcoVadis, then confirm the `suppliers` row carries `verified_email` + `verified_at` (and a `submissions` row for the questionnaire). Use an incognito window for a clean run — the browser stays signed in between tries.
+- [ ] **Builder — fix email deliverability (spam):** the test link came from `onboarding@resend.dev` and landed in spam. Verify the `lcaresource.com` domain in Resend (add SPF/DKIM DNS at resend.com/domains), then set the Supabase Auth sender back to `auth@lcaresource.com`. This is the main pre-go-live task.
+- [ ] **Builder — upgrade Supabase to Pro** before real supplier traffic (a paused Free project breaks login, not just submissions).
+- [ ] Housekeeping: `docs/supabase-setup.md` still lists Plan = Free; update when Pro upgrade happens. Tables are currently empty (test rows cleared).
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions
@@ -53,6 +54,10 @@ Session 7 (22 July 2026): Built v4.0 to the revised spec — magic-link verifica
 - Cosmetic (non-blocking): validation error text uses a non-brand red; the Guided Form shows two "Back" controls; PDF fonts are jsPDF stand-ins.
 [Rule: bugs, edge cases, and deferred fixes. One line each. Remove when resolved.]
 
-## Notes for next session
-v4.0 is built and deployed. The one open item is the **live magic-link click-through**: on the deployed site, Start submission → enter your email → click the emailed link → land on Route Choice → submit via each route → confirm rows carry `verified_email` + `verified_at`. If the link fails, first check Supabase → Authentication → URL Configuration (the Netlify URL must be in the Redirect allow-list). Builder pre-go-live tasks: Resend domain verification + Supabase Pro upgrade.
+## Notes for next session (for 23 July)
+v4.0 is live and the magic-link sign-in is **confirmed working** (link → portal). Tomorrow's priorities:
+1. **Finish the end-to-end proof:** in an incognito window, sign in via the magic link, then actually **submit** — questionnaire (guided + upload) and EcoVadis — and check the `suppliers`/`submissions` rows carry the verified fields. (The link email lands in **spam** for now — that's expected until the domain is verified.)
+2. **Deliverability (main go-live blocker):** verify `lcaresource.com` in Resend (SPF/DKIM), then switch the Supabase Auth sender from `onboarding@resend.dev` back to `auth@lcaresource.com` so links reach inboxes, not spam.
+3. **Upgrade Supabase to Pro** before sending the link to real suppliers.
+Nothing in the code/build is outstanding — the remaining work is dashboard/DNS config + a confirmation test.
 [Rule: the builder writes here between sessions. Claude Code reads these aloud at session start, acts on them, then clears this section.]
