@@ -24,12 +24,21 @@ export default function EmailEntry({ onBack }) {
       await sendMagicLink(email);
       setSent(true);
     } catch (err) {
-      const msg = err.message || '';
-      setError(
-        /failed to fetch|network/i.test(msg)
-          ? "We couldn't reach the server. Check your connection and try again."
-          : msg || 'We could not send the link. Please try again.'
-      );
+      // Log the raw error for debugging; show the supplier a clean, actionable message
+      // (server errors like a 500 can arrive with an empty/opaque body such as "{}").
+      // eslint-disable-next-line no-console
+      console.error('Magic-link send failed:', err);
+      const msg = (err && err.message) || '';
+      const looksUseful = /[a-z]/i.test(msg) && !/^\s*\{.*\}\s*$/.test(msg);
+      if (/failed to fetch|network/i.test(msg)) {
+        setError("We couldn't reach the server. Check your connection and try again.");
+      } else if (looksUseful) {
+        setError(msg);
+      } else {
+        setError(
+          "We couldn't send your link right now. Please try again in a moment. If it keeps happening, email rebecca@lcaresource.com."
+        );
+      }
     } finally {
       setSending(false);
     }
