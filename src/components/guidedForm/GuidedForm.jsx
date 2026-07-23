@@ -13,7 +13,9 @@ import {
 
 export default function GuidedForm({ onSubmitted, onBack, verifiedEmail }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  // Pre-fill the contact email with the magic-link-verified address (locked below).
+  // Pre-fill the contact email with the verified address as a convenience default.
+  // It stays editable — contact_email is self-reported and is stored separately from the
+  // verified email (which is captured from the session at write time).
   const [answers, setAnswers] = useState(() =>
     verifiedEmail ? { contact_email: verifiedEmail } : {}
   );
@@ -139,7 +141,6 @@ export default function GuidedForm({ onSubmitted, onBack, verifiedEmail }) {
               value={answers[field.id]}
               error={errors[field.id]}
               onChange={(value) => handleChange(field.id, value)}
-              readOnly={field.id === 'contact_email' && !!verifiedEmail}
             />
           ))}
 

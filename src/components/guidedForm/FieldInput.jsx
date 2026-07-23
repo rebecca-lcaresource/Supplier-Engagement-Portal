@@ -53,9 +53,6 @@ export default function FieldInput({ field, value, error, onChange, readOnly = f
           style={readOnly ? { background: 'var(--tc-chalk)', color: 'var(--tc-stone)' } : undefined}
         />
       )}
-      {readOnly && field.id === 'contact_email' && (
-        <p className="text-[13px] mt-xs text-stone">Verified — this is the email you confirmed.</p>
-      )}
 
       {field.type === 'select' && (
         <select

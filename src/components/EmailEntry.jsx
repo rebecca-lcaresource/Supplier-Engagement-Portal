@@ -4,10 +4,10 @@ import { sendMagicLink } from '../lib/auth.js';
 
 const EMAIL_RE = /^[\w.+-]+@[\w-]+\.[\w.-]+$/;
 
-// Verifies a supplier's email before the questionnaire. They enter their email, we send
-// a magic link; when they click it they return signed in (handled in App). The verified
-// email is then recorded as the contact email on their submission.
-export default function EmailGate({ onBack }) {
+// v4.0 verification gate (front of the whole flow). Two states in one screen:
+// Email Entry, then the Check-Your-Inbox holding message. The supplier clicks the
+// emailed magic link and returns in a verified session (handled in App → Route Choice).
+export default function EmailEntry({ onBack }) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
@@ -52,22 +52,21 @@ export default function EmailGate({ onBack }) {
 
       <section className="py-3xl">
         <div className="max-w-page mx-auto px-md md:px-2xl max-w-content">
-          <p className="font-body text-[13px] font-medium tracking-[0.16em] uppercase text-stone mb-md">
-            Verify your email
-          </p>
-
           {sent ? (
             <>
+              <p className="font-body text-[13px] font-medium tracking-[0.16em] uppercase text-stone mb-md">
+                Check your inbox
+              </p>
               <h1 className="font-display text-2xl md:text-[32px] font-normal mb-lg">
-                Check your email
+                Your link is on its way
               </h1>
               <p className="mb-lg">
-                We've sent a secure link to <span className="font-medium">{email.trim()}</span>.
-                Open it on this device to continue to the questionnaire. The link is single-use
-                and expires shortly.
+                We've sent a one-time link to <span className="font-medium">{email.trim()}</span>.
+                Click it to continue — you can close this tab; the link opens the portal for you.
               </p>
               <p className="mb-xl text-sm text-stone">
-                No email after a minute or two? Check your spam folder, or go back and try again.
+                No email after a minute or two? Check your spam folder, or go back and enter your
+                email again to request a fresh link.
               </p>
               <button
                 type="button"
@@ -82,20 +81,23 @@ export default function EmailGate({ onBack }) {
             </>
           ) : (
             <>
+              <p className="font-body text-[13px] font-medium tracking-[0.16em] uppercase text-stone mb-md">
+                Verify your email
+              </p>
               <h1 className="font-display text-2xl md:text-[32px] font-normal mb-md">
                 Enter your email to begin
               </h1>
               <p className="mb-xl">
-                We'll send you a secure link to confirm it's you. This email is recorded with
-                your submission so The Corporate can reach the right contact.
+                We'll send you a one-time link to confirm it's you. Once verified, you'll choose how
+                to respond — EcoVadis or The Corporate's questionnaire.
               </p>
 
               <div className="mb-lg">
-                <label htmlFor="gate-email" className="block mb-xs">
+                <label htmlFor="email-entry" className="block mb-xs">
                   <span className="font-body text-sm text-ink">Work email address</span>
                 </label>
                 <input
-                  id="gate-email"
+                  id="email-entry"
                   type="email"
                   className={`tc-input ${error ? 'has-error' : ''}`}
                   value={email}
@@ -124,7 +126,7 @@ export default function EmailGate({ onBack }) {
                   disabled={sending}
                   className="tc-btn-primary"
                 >
-                  {sending ? 'Sending…' : 'Send me the link'}
+                  {sending ? 'Sending…' : 'Send link'}
                 </button>
               </div>
             </>

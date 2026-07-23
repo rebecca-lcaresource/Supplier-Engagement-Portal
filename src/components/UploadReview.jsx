@@ -146,7 +146,6 @@ export default function UploadReview({ parsedAnswers, contactHints, verifiedEmai
                 value={contact[field.id]}
                 error={errors[field.id]}
                 onChange={(value) => handleContactChange(field.id, value)}
-                readOnly={field.id === 'contact_email' && !!verifiedEmail}
               />
             ))}
           </div>

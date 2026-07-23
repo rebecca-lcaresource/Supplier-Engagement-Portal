@@ -2,48 +2,29 @@
 
 > Claude Code: read this file at the start of every session, before touching anything. Update it at every save point. Replace content — do not append. History lives in git.
 
-**Session:** 6 — v3.0 build (database, EcoVadis registration, consent) + structured questionnaire contact fields, by Claude Code
-**Last updated:** 15 July 2026 — Claude Code, v3.0 build
-**Live URL:** https://supplier-engagement-portal.netlify.app/ (Netlify — sole target). v3.0 deployed via PR #2; EcoVadis route confirmed live. Netlify env vars confirmed set.
+**Session:** 7 — v4.0 build (magic-link email verification, Tier 3), by Claude Code
+**Last updated:** 22 July 2026 — Claude Code, v4.0 build
+**Live URL:** https://supplier-engagement-portal.netlify.app/ (Netlify — sole target). v3.0 deployed + both routes confirmed live earlier. v4.0 built this session; awaiting live magic-link test.
 
 ## Current state
-**v3.0 is code-complete and builds clean** (`npm run build`, v3.0.0). The portal is now Tier 2: supplier submissions persist to Supabase, and the app is **write-only**.
+**v4.0 is code-complete and builds clean** (`npm run build`, v4.0.0). The portal is now **Tier 3**: a magic-link email-verification gate precedes route choice and all data entry. Everything from v3.0 (both doors, EcoVadis registration, consent, PDF, write-only) is retained.
 
-- **Database (Supabase `hqqngissvcbevktcizit`):** `suppliers` + `submissions` tables, `submissions.supplier_id` index, RLS enabled. `anon` is INSERT-only, enforced in **two layers** — INSERT-only RLS policies *and* non-INSERT privileges revoked at the GRANT layer. Verified acting as the `anon` role: INSERT succeeds, SELECT/UPDATE denied, `consent_given = false` blocked by CHECK. Schema documented in `docs/supabase-setup.md` (the schema source of truth).
-- **Write paths:** EcoVadis route = one direct `suppliers` insert (`route=ecovadis`, `status=declared`). Questionnaire route = the `submit_questionnaire` RPC (SECURITY DEFINER, EXECUTE to `anon`) writing `suppliers` + `submissions` **atomically** — no orphan rows if the second insert fails. Verified atomic (invalid door rolls back both). The client **never reads** — no `.select()` on either table.
-- **EcoVadis Registration screen (new):** 5 fields + consent; on valid consented Continue it writes the row then opens ecovadis.com in a new tab. A failed write shows a clear error and **blocks the redirect** (verified in-browser).
-- **GDPR consent:** unticked, blocking checkbox at all three submission points (guided form final step, upload review, EcoVadis), brand-voice text stating what/why/where (US)/how long (24 mo)/deletion contact. `consent_given/at/version` written on every supplier row; `CONSENT_VERSION = 2026-v1`.
-- **Confirmation** states the submission was recorded + shows 24-month retention and rebecca@lcaresource.com. A failed write never reaches Confirmation (verified). PDF export retained.
-- **Retired GitHub Pages leftovers:** `import.meta.env.BASE_URL` asset handling removed (absolute `/assets/` paths); Vite `base` is `/`. (No `deploy-pages.yml` existed in the repo.)
+- **Flow:** Landing (single "Start submission" CTA; routes described as context) → **Email Entry → Check-Your-Inbox → magic link → verified session → Route Choice** → EcoVadis Registration OR Door Choice → Guided Form / Upload → Confirmation. The EcoVadis-vs-questionnaire choice now happens *after* verification.
+- **Hard gate** (`src/App.jsx`): Route Choice, EcoVadis Registration, Door Choice, and all data-entry screens are unreachable without a verified session (`GATED` list → forced to Email Entry otherwise). Returning from the link fires `SIGNED_IN` → Route Choice.
+- **Database (Supabase `hqqngissvcbevktcizit`):** added `verified_email` + `verified_at` (both NOT NULL) to `suppliers`. Writes moved from `anon` to **`authenticated`** — `anon` INSERT revoked (policies + grant dropped); `authenticated` INSERT policies/grant + RPC EXECUTE. The `submit_questionnaire` RPC gained `p_verified_email` + `p_verified_at`. Verified acting as each role: `authenticated` inserts/can't read, **`anon` can't insert**, NOT NULL + consent CHECK hold. `docs/supabase-setup.md` updated.
+- **Verified identity capture:** both write paths read `verified_email` + `verified_at` from the session (`src/lib/auth.js`) and store them; a write with no verified session throws. `contact_email` is self-reported (pre-filled with the verified email, but editable) and stored **separately** — not enforced to match.
+- **New screens:** `EmailEntry.jsx` (entry + check-inbox), `RouteChoice.jsx`. `EmailGate.jsx` (v3.1) removed. Consent copy updated to cover the verified + contact emails.
+- **No email function, no Resend key, no service-role key** anywhere in the repo — Supabase Auth sends the magic link via Resend SMTP (dashboard-only).
 
 [Rule: this section describes what exists and works right now — never what is planned.]
 
 ## Last session
-Session 6 (15 July 2026): Built all of v3.0 — schema + RLS + atomic RPC (write-only invariant proven as the anon role), EcoVadis Registration screen, consent at all three points, both-door writes with failure handling, updated Confirmation, removed Pages `BASE_URL` handling. Deployed via PR #2 → main → Netlify; EcoVadis route confirmed writing live. Then replaced the questionnaire's free-text Section 1 with four **structured contact fields** (company/country/contact name/email) on both doors so the `suppliers` columns are clean. Built clean; browser-verified (17/17 v3.0 checks earlier + 14/14 for the structured fields: guided S1, email validation, upload review contact fields, template parse).
-[Rule: 3–5 lines maximum. Replace each session.]
+Session 7 (22 July 2026): Built v4.0 to the revised spec — magic-link verification gate at the front of the flow (Tier 3, A2). DB: verified columns, RPC verified params, writes moved `anon`→`authenticated` (anon insert revoked), all verified acting as each role. App: single "Start submission" CTA, Email Entry, Check-Your-Inbox, Route Choice, hard session gate, verified fields into both writes; reverted the v3.1 contact-email lock (now self-reported + separate verified column). Built clean; browser-verified 12/12 (single CTA, gate, verified→Route Choice→both routes, verified-email pre-fill, EcoVadis reachable). Deployed via PR to main.
 
 ## Remaining work
-- [ ] **Verify the questionnaire route's live success-path write.** The EcoVadis route is confirmed live (a real submission landed a clean `suppliers` row on 15 Jul). Still to confirm on the deployed site: a guided-form submit and an upload submit each land a `suppliers` + `submissions` row in the dashboard (spec criteria 7, 10, 11, 18). Sandbox egress blocks `supabase.co`, so this must be done from the live site.
-
-### v4.0 — magic-link email verification (Tier 3, A2)
-Builder pre-tasks (dashboards / DNS — not build tasks):
-- [x] (v4.0 revision) Builder: Resend account + API key created
-- [x] (v4.0 revision) Builder: Resend custom SMTP configured in Supabase (Authentication → Emails → SMTP Settings), 22 Jul 2026
-- [x] (v4.0 revision) Builder: Supabase Auth URL Configuration set — Site URL + redirect = the Netlify URL, 22 Jul 2026
-- [ ] (v4.0 revision) Builder: verify the `lcaresource.com` sending domain in Resend (SPF/DKIM DNS) — **deferrable to pre-go-live**; magic links can be tested to the builder's own inbox until then
-- [ ] (v4.0 revision) Builder: upgrade Supabase to Pro before real supplier traffic — a paused Free project now breaks login (manual billing step)
-
-Build:
-- [ ] (v4.0 revision) Add `verified_email` + `verified_at` columns to `suppliers`; enable magic-link auth (open signup); move INSERT from `anon` to `authenticated` on both tables (policies + GRANTs, revoke anon); move the `submit_questionnaire` RPC EXECUTE to `authenticated` and add the two verified params; update docs/supabase-setup.md
-- [ ] (v4.0 revision) Verify RLS before UI: `authenticated` can insert / cannot read; `anon` cannot insert
-- [ ] (v4.0 revision) Landing Page — replace the two route buttons with a single "Start submission" CTA
-- [ ] (v4.0 revision) Build Email Entry — collect + send the magic link (Supabase Auth sign-in)
-- [ ] (v4.0 revision) Build Check-Your-Inbox holding screen
-- [ ] (v4.0 revision) Build Route Choice — reached only in a verified session; choose EcoVadis or questionnaire
-- [ ] (v4.0 revision) Wire the verified-session gate — Route Choice / EcoVadis Registration / all data-entry screens unreachable without it; capture `verified_email` + `verified_at` from the session and pass into both write paths (run as `authenticated`)
-- [ ] (v4.0 revision) Local test pass — magic link to the builder's own inbox; confirm rows (with verified fields) land in the dashboard
-- [ ] (v4.0 revision) Acceptance criteria pass — verify all 25 criteria in spec "Acceptance Criteria" before deploy
-- [ ] (v4.0 revision) Deploy to Netlify (push to main → auto-deploy; env vars already set)
+- [ ] **Test the magic-link flow live.** Sandbox egress blocks `supabase.co`, so the email send + link click were tested with a simulated session only. On the deployed site: Start submission → enter your email → click the link → Route Choice → submit via each route → confirm the `suppliers` row has `verified_email` + `verified_at` (and a `submissions` row for the questionnaire). Re-test in incognito (the browser stays signed in between tries).
+- [ ] Builder: verify the `lcaresource.com` sending domain in Resend (SPF/DKIM) — deferrable to pre-go-live; until then links go to your own inbox.
+- [ ] Builder: upgrade Supabase to **Pro** before real supplier traffic — a paused Free project now breaks login, not just submissions.
 [Rule: completed items leave this list and are absorbed into Current state. This list only shrinks.]
 
 ## Build decisions
@@ -57,12 +38,13 @@ Build:
 - **(v3.0) Write-only pattern:** `anon` has no SELECT, so the app never uses `.select()`/RETURNING. The questionnaire write goes through a SECURITY DEFINER RPC for atomicity; EcoVadis is a single direct insert. `@supabase/supabase-js` v2 `.insert()` without `.select()` sends `return=minimal`, so no read is needed.
 - **(v3.0) Questionnaire Section 1 = structured identity fields** (`company_name`, `country`, `contact_name`, `contact_email`), replacing the old free-text S1 on both doors. Collected on-screen (guided-form Section 1, or the Upload Review screen for Door 2), never parsed from the workbook. `contact_email` is a validated email field. Both doors still emit an identical `answers` shape.
 - **(v3.0) Consent version** `2026-v1` (`src/lib/db.js`); bump it in step with any wording change in `ConsentCheckbox.jsx`.
+- **(v4.0) Magic-link gate** is state-based in `App.jsx` (`GATED` views + `effectiveView`), not URL-routed — this is a single-page app. `SIGNED_IN` → Route Choice; a verified but not-yet-started returning session sends "Start submission" straight to Route Choice. Sessions persist (retest in incognito). `verified_at` is read from the session user (`email_confirmed_at` → `confirmed_at` → `last_sign_in_at`). `verified_email` and `contact_email` are stored separately and not enforced equal (UI-only ownership check).
 - Intentional brand exception: the Landing Page's two section dividers are Dark Blue (`#00008B`) by explicit builder request.
 - Acid Lime used exactly twice on the landing page (hero "2026" underline; "Smart Intake" badge).
 [Rule: one line per decision made during the build that is not in the spec.]
 
 ## Known issues
-- **Spec revised to v4.0 on 22 July 2026 — CLAUDE.md regenerated by Project Governor.** v4.0 promotes the tool to Tier 3 (magic-link email verification, A2). See the v4.0 block in Remaining work.
+- **Live magic-link flow not yet exercised end-to-end** — verified with a simulated session only (sandbox blocks `supabase.co`). Needs one real click-through on the deployed site (see Remaining work).
 - **Supabase is on the Free tier.** It pauses after ~1 week idle; while paused, **login now fails** (magic link) as well as submissions. Upgrade to Pro before sustained supplier traffic, or manually unpause around idle periods.
 - **Retention deletion is manual** — nothing auto-deletes at 24 months. Rebecca must diarise this; it is a live GDPR obligation. **v4.0 note:** deletion must now also remove the supplier's Supabase Auth user, not just the table rows.
 - **Supabase region is us-east-1 (US), not EU** — disclosed in the consent text; cannot change without a new project.
@@ -72,5 +54,5 @@ Build:
 [Rule: bugs, edge cases, and deferred fixes. One line each. Remove when resolved.]
 
 ## Notes for next session
-Two things carry over. (1) v3.0 leftover: verify one real questionnaire submission per route (guided + upload) on the **deployed** site and confirm the rows appear in the Supabase dashboard — the only thing the sandbox's blocked egress prevented. (2) v4.0 is next: the dashboard SMTP + Auth URL config are done; build the verification gate per the v4.0 block. Domain verification and the Pro upgrade are the builder's remaining pre-go-live tasks.
+v4.0 is built and deployed. The one open item is the **live magic-link click-through**: on the deployed site, Start submission → enter your email → click the emailed link → land on Route Choice → submit via each route → confirm rows carry `verified_email` + `verified_at`. If the link fails, first check Supabase → Authentication → URL Configuration (the Netlify URL must be in the Redirect allow-list). Builder pre-go-live tasks: Resend domain verification + Supabase Pro upgrade.
 [Rule: the builder writes here between sessions. Claude Code reads these aloud at session start, acts on them, then clears this section.]
