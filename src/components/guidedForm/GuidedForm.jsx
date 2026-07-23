@@ -11,9 +11,14 @@ import {
   DECLARATION_FIELDS,
 } from '../../data/questionnaireFields.js';
 
-export default function GuidedForm({ onSubmitted, onBack }) {
+export default function GuidedForm({ onSubmitted, onBack, verifiedEmail }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
+  // Pre-fill the contact email with the verified address as a convenience default.
+  // It stays editable — contact_email is self-reported and is stored separately from the
+  // verified email (which is captured from the session at write time).
+  const [answers, setAnswers] = useState(() =>
+    verifiedEmail ? { contact_email: verifiedEmail } : {}
+  );
   const [errors, setErrors] = useState({});
   const [consent, setConsent] = useState(false);
   const [consentError, setConsentError] = useState(null);

@@ -13,111 +13,112 @@
 | Region | us-east-1 (US) — disclosed in consent text; cannot change without a new project |
 | Postgres | 17 |
 | Organization | LCA Resource LLC |
-| Plan | **Free tier** (builder decision, 15 July 2026). ⚠️ Pauses after ~1 week idle — while paused, supplier submissions fail. Unpause manually in the dashboard before/after idle periods, or upgrade to Pro before sustained supplier traffic. |
+| Plan | **Free tier.** ⚠️ In v4.0 a paused Free project breaks **login** (magic link can't be sent/completed), not just submissions — the whole portal is unusable until unpaused. Upgrade to Pro before real supplier traffic. |
 
 ## Client configuration
 
 The app connects with the **publishable (anon) key** only, exposed to the browser at build time via Netlify env vars:
 
 - `VITE_SUPABASE_URL` = the project URL above
-- `VITE_SUPABASE_ANON_KEY` = the anon / publishable key (Project Settings → API)
+- `VITE_SUPABASE_ANON_KEY` = the anon / publishable key (used for both DB calls and to request magic links)
 
-The **service-role key is never used** — never in code, env, or repo. It bypasses RLS.
+The **service-role key is never used** — never in code, env, or repo. The **Resend credential is not an app key** — it lives only in Supabase Auth → SMTP settings, never in the repo.
+
+## Authentication (magic link) — v4.0
+
+Access model **A2 (authentication, no roles)**. Before choosing a route or entering any data, a supplier must verify a reachable email:
+
+1. App calls `supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: <site origin> } })`.
+2. Supabase Auth emails a one-time magic link (delivered via **Resend custom SMTP**, configured in the dashboard).
+3. Clicking the link returns the supplier in a verified session (`authenticated` role). The app reads the **verified email + verification time** from the session and writes them to `suppliers.verified_email` / `verified_at`.
+
+Open signup (anyone may request a link). The session only (a) gates progress and (b) supplies the verified identity — submissions are **not** linked to a `user_id`. Both routes (EcoVadis + questionnaire) run in a verified session.
+
+**Required dashboard config (outside code):** Authentication → Email provider enabled; **URL Configuration** → Site URL + Redirect URLs include the Netlify URL (**this is the #1 thing that breaks magic links if missing**); SMTP → Resend.
 
 ## Tables
 
 ### `suppliers`
 
-One row per supplier who registers (EcoVadis route) or submits (questionnaire route). A row is created only on submit/register — there is no "not started" state.
+One row per supplier who registers (EcoVadis route) or submits (questionnaire route). Created only on submit/register.
 
 | Column | Type | Constraints |
 |--------|------|-------------|
-| `id` | uuid | PK, default `gen_random_uuid()`. Never read back by the app — the EcoVadis route lets the DB default it; the questionnaire route links `submissions` inside the RPC. |
+| `id` | uuid | PK, default `gen_random_uuid()`. Never read back by the app. |
 | `company_name` | text | not null |
 | `country` | text | not null |
 | `contact_name` | text | not null |
-| `contact_email` | text | not null — **personal data (GDPR)** |
+| `contact_email` | text | not null — **self-reported** email typed into the form. Personal data (GDPR). |
+| `verified_email` | text | **not null (NEW v4.0)** — the email proven via magic link, from the session. Personal data (GDPR). |
+| `verified_at` | timestamptz | **not null (NEW v4.0)** — when the email was verified (from the session). |
 | `route` | text | not null, CHECK in (`ecovadis`, `questionnaire`) |
 | `status` | text | not null, CHECK in (`declared`, `submitted`) |
 | `ecovadis_scorecard_url` | text | nullable (required by the app when `route = ecovadis`) |
-| `consent_given` | boolean | not null, **CHECK (`consent_given = true`)** — a row cannot exist without consent |
+| `consent_given` | boolean | not null, **CHECK (`consent_given = true`)** |
 | `consent_at` | timestamptz | not null |
 | `consent_version` | text | not null (e.g. `2026-v1`) |
 | `created_at` | timestamptz | not null, default `now()` |
 
+> `verified_email` vs `contact_email` are stored **separately and not enforced to match** (email-ownership validation is UI-only). Verified = proven mailbox; contact = whatever the supplier types.
+
 ### `submissions`
 
-One row per completed questionnaire. EcoVadis-route suppliers have **no** submission row.
-
-| Column | Type | Constraints |
-|--------|------|-------------|
-| `id` | uuid | PK, default `gen_random_uuid()` |
-| `supplier_id` | uuid | not null, FK → `suppliers.id` |
-| `submitted_at` | timestamptz | not null, default `now()` |
-| `door` | text | not null, CHECK in (`guided_form`, `upload`) |
-| `answers` | jsonb | not null — all answers keyed by question ID (identical shape from both doors) |
-| `created_at` | timestamptz | not null, default `now()` |
+One row per completed questionnaire. EcoVadis-route suppliers have **no** submission row. Unchanged from v3.0: `id`, `supplier_id` (FK → `suppliers.id`), `submitted_at`, `door` (`guided_form`|`upload`), `answers` (jsonb), `created_at`.
 
 **Index:** `submissions_supplier_id_idx` on `submissions (supplier_id)`.
 
-## RLS — write-only, enforced in two layers
+## RLS — write-only, `authenticated` role (v4.0)
 
-RLS is **enabled on both tables**. The `anon` role can INSERT and nothing else.
+RLS enabled on both tables. In v4.0 the inserting role moved from `anon` to **`authenticated`** — every submission happens in a verified session.
 
-| Table | anon INSERT | anon SELECT | anon UPDATE | anon DELETE |
-|-------|-------------|-------------|-------------|-------------|
-| `suppliers` | ✅ Allowed | ❌ Denied | ❌ Denied | ❌ Denied |
-| `submissions` | ✅ Allowed | ❌ Denied | ❌ Denied | ❌ Denied |
+| Table | `anon` | `authenticated` |
+|-------|--------|-----------------|
+| `suppliers` | INSERT ❌ (removed) · read/update/delete ❌ | **INSERT ✅** · read/update/delete ❌ |
+| `submissions` | INSERT ❌ (removed) · read/update/delete ❌ | **INSERT ✅** · read/update/delete ❌ |
 
-Two layers of enforcement:
-
-1. **RLS policies** — only `INSERT` policies exist (`with check (true)`) for `anon`. No SELECT/UPDATE/DELETE policy exists; under RLS, absence of a policy is denial.
-2. **GRANT layer** — SELECT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER were **revoked from `anon`**; only INSERT remains granted. So even if a policy were ever added by mistake, the privilege is gone.
-
-Because `anon` lacks SELECT, supabase-js `.insert().select()` fails for anon. The app therefore **never reads**:
-
-- **EcoVadis route** — a single direct `insert` into `suppliers` with `return=minimal` (no submission row, no id read back).
-- **Questionnaire route** — the `submit_questionnaire` RPC (below) writes both rows in one transaction and links them server-side, so the client needs no id and there is never an orphan `suppliers` row if the `submissions` insert fails.
-
-The questionnaire's Section 1 (company name, country, contact name, contact email) is captured as four **structured on-screen fields** — guided-form Section 1, or the Upload Review screen for Door 2 — and passed to the RPC to populate the `suppliers` identity columns cleanly (matching the EcoVadis route). They are not parsed from the uploaded workbook.
+Two layers: (1) RLS INSERT policies exist **only for `authenticated`** (`with check (true)`); no SELECT/UPDATE/DELETE policy for any role. (2) GRANT: INSERT granted to `authenticated`, revoked from `anon`; SELECT/UPDATE/DELETE revoked from all client roles. The app **never reads** — no `.select()` on either table.
 
 ### Function: `submit_questionnaire(...)`
 
-`SECURITY DEFINER`, `EXECUTE` granted to `anon` only (revoked from `PUBLIC`). It **inserts** the `suppliers` and `submissions` rows atomically and **returns void** — it exposes no read path, so the write-only invariant holds. Signature:
+`SECURITY DEFINER`, **EXECUTE granted to `authenticated`** (revoked from `anon`/`PUBLIC`). Inserts `suppliers` + `submissions` atomically, returns void. Signature (v4.0 — gained the two verified params):
 
 ```
 submit_questionnaire(
   p_company_name text, p_country text, p_contact_name text, p_contact_email text,
+  p_verified_email text, p_verified_at timestamptz,
   p_consent_version text, p_door text, p_answers jsonb
 ) returns void
 ```
 
-Sets `route = 'questionnaire'`, `status = 'submitted'`, `consent_given = true`, `consent_at = now()`. Rejects an unknown `p_door` or an empty `p_consent_version`.
+Sets `route='questionnaire'`, `status='submitted'`, `consent_given=true`, `consent_at=now()`. Rejects unknown `p_door`, empty `p_consent_version`, empty `p_verified_email`, or null `p_verified_at`.
 
-### Verification (run 15 July 2026, acting as the `anon` role — the real RLS boundary)
+### Verification (run 22 July 2026, acting as each role — the real RLS boundary)
 
 | Check | Result |
 |-------|--------|
-| anon INSERT `suppliers` (client-supplied id, no RETURNING) | ✅ succeeds |
-| anon INSERT `submissions` (client-supplied id, no RETURNING) | ✅ succeeds |
-| anon SELECT `suppliers` | ✅ denied |
-| anon UPDATE `suppliers` | ✅ denied |
-| anon INSERT with `consent_given = false` | ✅ blocked by CHECK |
+| `authenticated` INSERT `suppliers` | ✅ succeeds |
+| `authenticated` SELECT | ✅ denied |
+| `authenticated` RPC (with verified params) | ✅ succeeds |
+| **`anon` INSERT** | ✅ **denied** (v4.0 change) |
+| `verified_email` NOT NULL | ✅ enforced |
+| `consent_given = false` | ✅ blocked by CHECK (unchanged) |
 
-All probe rows were rolled back / deleted; both tables are empty.
+All probe rows deleted; both tables empty.
 
 ## Migrations applied
 
 1. `v3_0_suppliers_submissions_schema` — tables, index, RLS enabled, anon INSERT policies.
-2. `v3_0_lock_anon_to_insert_only` — revoke non-INSERT privileges from `anon` (defense in depth).
-3. `v3_0_submit_questionnaire_rpc` — atomic two-insert RPC (SECURITY DEFINER; EXECUTE to `anon`).
+2. `v3_0_lock_anon_to_insert_only` — revoke non-INSERT privileges from `anon`.
+3. `v3_0_submit_questionnaire_rpc` — atomic two-insert RPC (EXECUTE to `anon`).
+4. `v3_1_allow_authenticated_inserts` — add `authenticated` INSERT policies/grant + RPC EXECUTE.
+5. `v4_0_verified_email_and_authenticated_writes` — add `verified_email` + `verified_at`; **revoke `anon` INSERT** (drop anon policies + grant); replace RPC with the 9-param verified signature, EXECUTE `authenticated` only.
 
 ## Notes
 
-- **Reading** happens only in the Supabase dashboard (Rebecca), authenticated by Supabase — never in the app.
-- **Retention:** 24 months, deleted **manually** in the dashboard (no automated job in v3.0).
-- **Duplicates** are allowed (a re-submission creates a second row); dedupe by eye on `contact_email`.
+- **Reading** happens only in the Supabase dashboard (Rebecca), never in the app.
+- **Retention:** 24 months, deleted **manually** in the dashboard — v4.0 deletion must **also remove the supplier's Supabase Auth user** (`auth.users`), not just these rows.
+- **Duplicates** allowed; dedupe by eye on `contact_email` / `verified_email`.
 
 ---
 
-_Last updated: 15 July 2026 — Session 5 (v3.0 build). Schema created via Supabase MCP._
+_Last updated: 22 July 2026 — v4.0 build (magic-link verification). Schema changes via Supabase MCP._

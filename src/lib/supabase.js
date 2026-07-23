@@ -22,9 +22,17 @@ if (!url || !anonKey) {
   );
 }
 
+// Sessions are ON so magic-link (Supabase Auth) sign-in works: detectSessionInUrl
+// picks up the token when a supplier returns from the emailed link, persistSession
+// keeps them signed in through the questionnaire. The app is still write-only —
+// even a signed-in supplier can only INSERT (enforced by RLS), never read.
 export const supabase =
   url && anonKey
     ? createClient(url, anonKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+        },
       })
     : null;

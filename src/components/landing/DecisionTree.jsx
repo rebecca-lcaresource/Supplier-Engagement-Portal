@@ -1,8 +1,8 @@
-import { useState } from 'react';
-
-export default function DecisionTree({ id, onCompleteQuestionnaire, onEcoVadis }) {
-  const [answer, setAnswer] = useState(null); // null | 'yes' | 'no'
-
+// v4.0: the landing page no longer offers the route choice. The two route buttons are
+// replaced by a single "Start submission" CTA; the routes are described here only as
+// context. The EcoVadis-vs-questionnaire choice happens after email verification
+// (Route Choice screen).
+export default function DecisionTree({ id, onStartSubmission }) {
   return (
     <section id={id} className="py-3xl bg-linen">
       <div className="max-w-page mx-auto px-md md:px-2xl">
@@ -10,96 +10,40 @@ export default function DecisionTree({ id, onCompleteQuestionnaire, onEcoVadis }
           What you do now
         </p>
         <h2 className="font-display text-2xl md:text-[26px] font-normal mb-lg max-w-content">
-          Do you hold a valid EcoVadis scorecard issued within the last 12 months?
+          Verify your email, then choose the route that fits you.
         </h2>
+        <p className="mb-2xl max-w-content">
+          To begin, confirm your email address — we'll send a one-time link. Once verified, you'll
+          pick one of two routes:
+        </p>
 
-        <div className="flex items-center gap-md flex-wrap mb-2xl">
-          <button
-            type="button"
-            className="tc-yn-btn"
-            aria-pressed={answer === 'yes'}
-            style={answer === 'yes' ? { background: 'var(--tc-ink)', color: 'var(--tc-chalk)' } : undefined}
-            onClick={() => setAnswer('yes')}
-          >
-            Yes
-          </button>
-          <button
-            type="button"
-            className="tc-yn-btn"
-            aria-pressed={answer === 'no'}
-            style={answer === 'no' ? { background: 'var(--tc-ink)', color: 'var(--tc-chalk)' } : undefined}
-            onClick={() => setAnswer('no')}
-          >
-            No
-          </button>
-          <button
-            type="button"
-            className="font-body text-xs font-normal tracking-[0.08em] uppercase text-stone underline hover:text-ink px-sm py-[12px]"
-            onClick={() => setAnswer(null)}
-          >
-            Reset
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-lg mb-2xl">
           <PathCard
-            label="Path A"
+            label="Route A"
             title="EcoVadis"
-            instruction="Register your details, then continue to EcoVadis to share your current scorecard."
-            emphasized={answer === 'yes'}
-            dimmed={answer === 'no'}
-          >
-            <button type="button" onClick={onEcoVadis} className="tc-btn-primary">
-              Continue to EcoVadis
-            </button>
-          </PathCard>
-
+            instruction="If you hold a valid EcoVadis scorecard, register your details and continue to EcoVadis to share it — no duplicate assessment."
+          />
           <PathCard
-            label="Path B"
+            label="Route B"
             title="Questionnaire"
-            instruction="Complete the assessment in the tool, or download it, finish offline, and upload the result."
-            emphasized={answer === 'no'}
-            dimmed={answer === 'yes'}
-          >
-            <button type="button" onClick={onCompleteQuestionnaire} className="tc-btn-primary">
-              Complete Questionnaire
-            </button>
-          </PathCard>
+            instruction="Complete The Corporate's assessment in the tool, or download it, finish offline, and upload the result."
+          />
         </div>
-      </div>
 
-      <style>{`
-        .tc-yn-btn {
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px;
-          font-weight: 500;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          background: transparent;
-          color: var(--tc-ink);
-          border: 0.5px solid var(--tc-ink);
-          border-radius: 0;
-          padding: 12px 32px;
-          cursor: pointer;
-        }
-      `}</style>
+        <button type="button" onClick={onStartSubmission} className="tc-btn-primary">
+          Start submission
+        </button>
+      </div>
     </section>
   );
 }
 
-function PathCard({ label, title, instruction, emphasized, dimmed, children }) {
+function PathCard({ label, title, instruction }) {
   return (
-    <div
-      className="bg-white p-lg transition-opacity duration-150"
-      style={{
-        border: emphasized ? '1px solid var(--tc-ink)' : '0.5px solid var(--tc-stone)',
-        opacity: dimmed ? 0.45 : 1,
-      }}
-    >
+    <div className="bg-white p-lg" style={{ border: '0.5px solid var(--tc-stone)' }}>
       <p className="font-body text-[13px] font-medium tracking-[0.1em] uppercase text-stone mb-xs">{label}</p>
       <h3 className="font-display text-2xl mb-md">{title}</h3>
-      <p className="mb-lg">{instruction}</p>
-      {children}
+      <p>{instruction}</p>
     </div>
   );
 }

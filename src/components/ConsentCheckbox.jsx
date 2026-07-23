@@ -9,9 +9,9 @@ const DELETION_EMAIL = 'rebecca@lcaresource.com';
 // `variant` tailors the "what we collect" clause to the route.
 const DATA_CLAUSE = {
   questionnaire:
-    'your company details, your name, and your email address, together with your questionnaire answers,',
+    'your company details, your name, the email address you verified, the contact email you provide, and your questionnaire answers,',
   ecovadis:
-    'your company details, your name, and your email address, together with your EcoVadis scorecard link,',
+    'your company details, your name, the email address you verified, the contact email you provide, and your EcoVadis scorecard link,',
 };
 
 export default function ConsentCheckbox({ variant = 'questionnaire', checked, onChange, error }) {
