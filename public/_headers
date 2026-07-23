@@ -1,0 +1,9 @@
+# Netlify cache headers.
+# Always revalidate the app shell so a new deploy is picked up immediately — this
+# prevents a browser from serving a stale index.html that points at old JS bundles.
+# (The JS/CSS bundles are content-hashed, so their URLs change every build and can't
+# go stale; the downloadable templates under /assets keep Netlify's default revalidation.)
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
